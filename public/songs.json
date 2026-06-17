@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title": "One Dance",
+    "artist": "Drake",
+    "cover": "/covers/images.jpeg",
+    "audio": "/songs/u_mzp0jgj0y4-one-dance-instrumental-drake-2016instrumentals-420830.mp3"
+  },
+  {
+    "id": 2,
+    "title": "All In My Mind",
+    "artist": "Unknown",
+    "cover": "/covers/download.jpeg",
+    "audio": "/songs/Aled_Edwards_-_All_In_My_Mind_-_Jazz_Dream_Pop.mp3"
+  },
+  {
+    "id": 3,
+    "title": "Spring Mother",
+    "artist": "Instrumental",
+    "cover": "/covers/images (1).jpeg",
+    "audio": "/songs/ikoliks_aj-acoustic-spring-mothers-day-music-320427.mp3"
+  }
+]

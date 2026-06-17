@@ -1,38 +1,33 @@
 import "./App.css";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import Login from "./components/Login";
 
 function App() {
   const audioRef = useRef(null);
 
-  const songs = [
-    {
-      id: 1,
-      title: "One Dance",
-      artist: "Drake",
-      cover: "/covers/images.jpeg",
-      audio:
-        "/songs/u_mzp0jgj0y4-one-dance-instrumental-drake-2016instrumentals-420830.mp3",
-    },
-    {
-      id: 2,
-      title: "All In My Mind",
-      artist: "Unknown",
-      cover: "/covers/download.jpeg",
-      audio:
-        "/songs/Aled_Edwards_-_All_In_My_Mind_-_Jazz_Dream_Pop.mp3",
-    },
-    {
-      id: 3,
-      title: "Spring Mother",
-      artist: "Instrumental",
-      cover: "/covers/images (1).jpeg",
-      audio:
-        "/songs/ikoliks_aj-acoustic-spring-mothers-day-music-320427.mp3",
-    },
-  ];
-
-  const [currentSong, setCurrentSong] = useState(songs[0]);
+  const [songs, setSongs] = useState([]);
+  const [currentSong, setCurrentSong] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const [search, setSearch] = useState("");
+  const [shuffle, setShuffle] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [progress, setProgress] = useState(0);
+  const [favorites, setFavorites] = useState([]);
+  const [recentSongs, setRecentSongs] = useState([]);
+
+  useEffect(() => {
+    fetch("/songs.json")
+      .then((response) => response.json())
+      .then((data) => {
+        setSongs(data);
+        setCurrentSong(data[0]);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  if (!currentSong) {
+    return <h1>Loading...</h1>;
+  }
 
   const playSong = () => {
     audioRef.current.play();
@@ -45,21 +40,44 @@ function App() {
   };
 
   const selectSong = (song) => {
-    setCurrentSong(song);
+  setCurrentSong(song);
 
-    setTimeout(() => {
-      audioRef.current.play();
-      setPlaying(true);
-    }, 100);
-  };
+  setRecentSongs((prev) => {
+    const updated = [
+      song,
+      ...prev.filter((s) => s.id !== song.id),
+    ];
+
+    return updated.slice(0, 10);
+  });
+
+  setTimeout(() => {
+    audioRef.current.play();
+    setPlaying(true);
+  }, 100);
+};
 
   const nextSong = () => {
+    if (shuffle) {
+      const randomIndex = Math.floor(
+        Math.random() * songs.length
+      );
+
+      setCurrentSong(songs[randomIndex]);
+
+      setTimeout(() => {
+        audioRef.current.play();
+        setPlaying(true);
+      }, 100);
+
+      return;
+    }
+
     const currentIndex = songs.findIndex(
       (song) => song.id === currentSong.id
     );
 
-    const nextIndex =
-      (currentIndex + 1) % songs.length;
+    const nextIndex = (currentIndex + 1) % songs.length;
 
     setCurrentSong(songs[nextIndex]);
 
@@ -75,8 +93,7 @@ function App() {
     );
 
     const prevIndex =
-      (currentIndex - 1 + songs.length) %
-      songs.length;
+      (currentIndex - 1 + songs.length) % songs.length;
 
     setCurrentSong(songs[prevIndex]);
 
@@ -86,10 +103,32 @@ function App() {
     }, 100);
   };
 
+  const toggleFavorite = (song) => {
+    if (favorites.some((fav) => fav.id === song.id)) {
+      setFavorites(
+        favorites.filter((fav) => fav.id !== song.id)
+      );
+    } else {
+      setFavorites([...favorites, song]);
+    }
+  };
+
+  const filteredSongs = songs.filter(
+    (song) =>
+      song.title
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      song.artist
+        .toLowerCase()
+        .includes(search.toLowerCase())
+  );
+
   return (
     <div className="app">
       <div className="sidebar">
-        <h2>Spotify Clone</h2>
+        <h2>Vibely</h2>
+
+        <Login />
 
         <div className="menu-item">🏠 Home</div>
         <div className="menu-item">🔍 Search</div>
@@ -97,10 +136,56 @@ function App() {
       </div>
 
       <div className="main">
-        <h1>Spotify Library</h1>
+        <h1>Vibely Library</h1>
+
+        <input
+          type="text"
+          placeholder="Search songs..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+        />
+
+        <br />
+        <br />
+
+        <button
+          onClick={() =>
+            setShuffle(!shuffle)
+          }
+        >
+          {shuffle
+            ? "🔀 Shuffle ON"
+            : "🔀 Shuffle OFF"}
+        </button>
+
+        <h2>❤️ Favorite Songs</h2>
+        <h2>🕒 Recently Played</h2>
+
+<div className="song-list">
+  {recentSongs.map((song) => (
+    <div
+      key={song.id}
+      className="song-card"
+      onClick={() => selectSong(song)}
+    >
+      <img
+        src={song.cover}
+        alt={song.title}
+        className="cover"
+      />
+
+      <h3>{song.title}</h3>
+      <p>{song.artist}</p>
+    </div>
+  ))}
+</div>
+
+<br />
 
         <div className="song-list">
-          {songs.map((song) => (
+          {favorites.map((song) => (
             <div
               key={song.id}
               className="song-card"
@@ -118,6 +203,38 @@ function App() {
           ))}
         </div>
 
+        <div className="song-list">
+          {filteredSongs.map((song) => (
+            <div
+              key={song.id}
+              className="song-card"
+              onClick={() => selectSong(song)}
+            >
+              <img
+                src={song.cover}
+                alt={song.title}
+                className="cover"
+              />
+
+              <h3>{song.title}</h3>
+              <p>{song.artist}</p>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(song);
+                }}
+              >
+                {favorites.some(
+                  (fav) => fav.id === song.id
+                )
+                  ? "❤️"
+                  : "🤍"}
+              </button>
+            </div>
+          ))}
+        </div>
+
         <h2>Now Playing</h2>
 
         <img
@@ -129,13 +246,52 @@ function App() {
         <h3>{currentSong.title}</h3>
         <p>{currentSong.artist}</p>
 
-        <button onClick={prevSong}>⏮ Previous</button>
+        <button onClick={prevSong}>
+          ⏮ Previous
+        </button>
 
-        <button onClick={playSong}>▶ Play</button>
+        <button onClick={playSong}>
+          ▶ Play
+        </button>
 
-        <button onClick={pauseSong}>⏸ Pause</button>
+        <button onClick={pauseSong}>
+          ⏸ Pause
+        </button>
 
-        <button onClick={nextSong}>⏭ Next</button>
+        <button onClick={nextSong}>
+          ⏭ Next
+        </button>
+
+        <br />
+        <br />
+
+        <h3>Volume</h3>
+
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.1"
+          value={volume}
+          onChange={(e) => {
+            setVolume(e.target.value);
+            audioRef.current.volume =
+              e.target.value;
+          }}
+        />
+
+        <br />
+        <br />
+
+        <h3>Progress</h3>
+
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={progress}
+          readOnly
+        />
 
         <br />
         <br />
@@ -145,6 +301,13 @@ function App() {
           controls
           src={currentSong.audio}
           onEnded={nextSong}
+          onTimeUpdate={() => {
+            setProgress(
+              (audioRef.current.currentTime /
+                audioRef.current.duration) *
+                100 || 0
+            );
+          }}
         />
       </div>
 
