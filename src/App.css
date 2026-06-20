@@ -216,16 +216,26 @@ button:hover {
   left: 120%;
 }
 
+.song-card {
+  cursor: pointer;
+}
+
+.song-card {
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
 .song-card:hover {
-  transform:
-    translateY(-10px)
-    scale(1.03);
-
+  transform: translateY(-15px) scale(1.08);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid #ffb7d5;
   box-shadow:
-    0 0 40px rgba(255,183,213,.4);
+    0 0 25px rgba(255,183,213,0.8),
+    0 0 60px rgba(192,132,252,0.6);
+}
 
-  background:
-    rgba(255,255,255,.12);
+.song-card:hover .cover {
+  transform: scale(1.1);
 }
 
 .song-card h3 {
@@ -243,13 +253,17 @@ button:hover {
 
 /* CURRENT SONG */
 .current-cover {
-  width: 250px;
+  width: 350px;
+  height: 350px;
+  object-fit: cover;
+
   border-radius: 25px;
 
   box-shadow:
-    0 0 40px rgba(192,132,252,.6);
+    0 0 30px rgba(255,183,213,.5),
+    0 0 60px rgba(192,132,252,.4);
 
-  animation: albumFloat 4s ease-in-out infinite;
+  transition: 0.4s;
 }
 
 @keyframes albumFloat {
@@ -580,8 +594,10 @@ button:hover {
   box-shadow:
     0 0 15px #fff5b7,
     0 0 30px #fff5b7;
+     animation: firefly 8s infinite ease-in-out;
+}
 
- .fireflies span:nth-child(1){animation-duration:8s;}
+.fireflies span:nth-child(1){animation-duration:8s;}
 .fireflies span:nth-child(2){animation-duration:10s;}
 .fireflies span:nth-child(3){animation-duration:12s;}
 .fireflies span:nth-child(4){animation-duration:9s;}
@@ -593,7 +609,6 @@ button:hover {
 .fireflies span:nth-child(10){animation-duration:12s;}
 .fireflies span:nth-child(11){animation-duration:9s;}
 .fireflies span:nth-child(12){animation-duration:11s;}
-}
 
 @keyframes firefly {
   50% {
@@ -631,10 +646,6 @@ button:hover {
   }
 }
 
-.current-cover.playing {
-  animation: spinAlbum 12s linear infinite;
-}
-
 @keyframes spinAlbum {
   0% {
     transform: rotate(0deg) translateY(0px);
@@ -661,4 +672,21 @@ button:hover {
   pointer-events: none;
 
   z-index: 0;
+}
+.cover {
+  width: 100%;
+  border-radius: 15px;
+  transition: 0.4s;
+}
+
+.song-card:hover .cover {
+  transform: scale(1.08);
+}
+
+.current-cover:hover {
+  transform: scale(1.05);
+
+  box-shadow:
+    0 0 40px rgba(255,183,213,.8),
+    0 0 80px rgba(192,132,252,.6);
 }

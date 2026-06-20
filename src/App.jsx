@@ -15,6 +15,10 @@ function App() {
   const [recentSongs, setRecentSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [playlistName, setPlaylistName] = useState("");
+  const [totalListeningTime, setTotalListeningTime] = useState(0);
+  const [playCount, setPlayCount] = useState({});
+  const [newSongTitle, setNewSongTitle] = useState("");
+  const [newSongArtist, setNewSongArtist] = useState("");
 
   useEffect(() => {
   fetch("/songs.json")
@@ -87,6 +91,20 @@ useEffect(() => {
       song,
       ...prev.filter((s) => s.id !== song.id),
     ];
+    
+    setPlayCount((prev) => {
+  const updated = {
+    ...prev,
+    [song.id]: (prev[song.id] || 0) + 1,
+  };
+
+  localStorage.setItem(
+    "playCount",
+    JSON.stringify(updated)
+  );
+
+  return updated;
+});
 
     return updated.slice(0, 10);
   });
@@ -96,6 +114,14 @@ useEffect(() => {
     setPlaying(true);
   }, 100);
 };
+
+const topSongs = [...songs]
+  .sort(
+    (a, b) =>
+      (playCount[b.id] || 0) -
+      (playCount[a.id] || 0)
+  )
+  .slice(0, 5);
 
   const nextSong = () => {
     if (shuffle) {
@@ -166,6 +192,102 @@ const deletePlaylist = (id) => {
   );
 };
 
+useEffect(() => {
+  const savedTime =
+    Number(localStorage.getItem("listeningTime")) || 0;
+
+  setTotalListeningTime(savedTime);
+}, []);
+
+useEffect(() => {
+  let timer;
+
+  if (playing) {
+    timer = setInterval(() => {
+      setTotalListeningTime((prev) => {
+        const updated = prev + 1;
+
+        localStorage.setItem(
+          "listeningTime",
+          updated
+        );
+
+        return updated;
+      });
+    }, 1000);
+  }
+
+  return () => clearInterval(timer);
+}, [playing]);
+
+useEffect(() => {
+  const saved =
+    JSON.parse(localStorage.getItem("playCount")) || {};
+
+  setPlayCount(saved);
+}, []);
+
+const recommendedSongs =
+  songs.filter(
+    song =>
+      song.artist === currentSong.artist &&
+      song.id !== currentSong.id
+  );
+
+  const addToPlaylist = (playlistId, song) => {
+  setPlaylists(
+    playlists.map((playlist) =>
+      playlist.id === playlistId
+        ? {
+            ...playlist,
+            songs: [...playlist.songs, song],
+          }
+        : playlist
+    )
+  );
+};
+
+const addSong = () => {
+  if (
+    !newSongTitle.trim() ||
+    !newSongArtist.trim()
+  ) {
+    alert("Please enter title and artist");
+    return;
+  }
+
+
+  const newSong = {
+  id: Date.now(),
+  title: newSongTitle,
+  artist: newSongArtist,
+  cover: "/default-cover.jpg",
+  audio: "/default.mp3",
+};
+
+const savedSongs =
+  JSON.parse(localStorage.getItem("customSongs")) || [];
+
+localStorage.setItem(
+  "customSongs",
+  JSON.stringify([...savedSongs, newSong])
+);
+
+  setSongs([...songs, newSong]);
+
+  setNewSongTitle("");
+  setNewSongArtist("");
+};
+
+useEffect(() => {
+  const savedSongs =
+    JSON.parse(localStorage.getItem("customSongs")) || [];
+
+  if (savedSongs.length > 0) {
+    setSongs(prev => [...prev, ...savedSongs]);
+  }
+}, []);
+
   return (
    <>
   <div className="moon"></div>
@@ -190,13 +312,7 @@ const deletePlaylist = (id) => {
 
 <img
   src="/tree.png"
-  className="tree-left"
-  alt="Cherry Blossom Tree"
-/>
-
-<img
-  src="/tree.png"
-  className="tree-right"
+  className="tree-decoration"
   alt="Cherry Blossom Tree"
 />
 
@@ -258,7 +374,11 @@ const deletePlaylist = (id) => {
 {playlists.map((playlist) => (
   <div key={playlist.id}>
     <h3>{playlist.name}</h3>
-    <p>{playlist.songs.length} songs</p>
+    {playlist.songs.map((song) => (
+  <p key={song.id}>
+    🎵 {song.title}
+  </p>
+))}
     <button onClick={() => deletePlaylist(playlist.id)}>
   🗑 Delete
 </button>
@@ -341,15 +461,22 @@ const deletePlaylist = (id) => {
             </div>
           ))}
         </div>
-
+<select
+  onChange={(e) =>
+    addToPlaylist(
+      Number(e.target.value),
+      song
+    )
+  }
+></select>
        <div className="now-playing">
   <h2>🎵 Now Playing</h2>
 
   <img
-    src={currentSong.cover}
-    alt={currentSong.title}
-    className="current-cover"
-  />
+  src={currentSong.cover}
+  alt={currentSong.title}
+  className={`current-cover ${playing ? "playing" : ""}`}
+/>
 
   <h3>{currentSong.title}</h3>
   <p>{currentSong.artist}</p>
@@ -414,6 +541,78 @@ const deletePlaylist = (id) => {
     }
   }}
 />
+<h2>📊 Stats</h2>
+
+<p>
+  Total Listening Time:
+  {" "}
+  {Math.floor(totalListeningTime / 60)}
+  min
+</p>
+
+<h2>🔥 On Repeat</h2>
+
+<div className="song-list">
+  {topSongs.map(song => (
+    <div
+      key={song.id}
+      className="song-card"
+      onClick={() => selectSong(song)}
+    >
+      <img
+        src={song.cover}
+        alt={song.title}
+        className="cover"
+      />
+
+      <h3>{song.title}</h3>
+      <p>{song.artist}</p>
+    </div>
+  ))}
+</div>
+
+<h2>✨ Recommended For You</h2>
+
+<div className="song-list">
+  {recommendedSongs.map(song => (
+    <div
+      key={song.id}
+      className="song-card"
+      onClick={() => selectSong(song)}
+    >
+      <img
+        src={song.cover}
+        alt={song.title}
+        className="cover"
+      />
+
+      <h3>{song.title}</h3>
+      <p>{song.artist}</p>
+    </div>
+  ))}
+</div>
+
+<h2>➕ Add Song</h2>
+
+<input
+  placeholder="Title"
+  value={newSongTitle}
+  onChange={(e) =>
+    setNewSongTitle(e.target.value)
+  }
+/>
+
+<input
+  placeholder="Artist"
+  value={newSongArtist}
+  onChange={(e) =>
+    setNewSongArtist(e.target.value)
+  }
+/>
+
+<button onClick={addSong}>
+  Add Song
+</button>
 
         <br />
         <br />
@@ -423,15 +622,39 @@ const deletePlaylist = (id) => {
           controls
           src={currentSong.audio}
           onEnded={nextSong}
-          onTimeUpdate={() => {
-            setProgress(
-              (audioRef.current.currentTime /
-                audioRef.current.duration) *
-                100 || 0
-            );
-          }}
-        />
+           onTimeUpdate={() => {
+  setProgress(
+    (audioRef.current.currentTime /
+      audioRef.current.duration) *
+      100 || 0
+  );
+}}
+/>
       </div>
+
+  <option>Add to Playlist</option>
+
+  {playlists.map((playlist) => (
+    <option
+      key={playlist.id}
+      value={playlist.id}
+    >
+      {playlist.name}
+    </option>
+  ))}
+
+<p>Favorites: {favorites.length}</p>
+
+<p>
+  Recently Played:
+  {recentSongs.length}
+</p>
+
+<p>
+  Total Songs:
+  {songs.length}
+</p>
+
 <div className="player">
   🎵{" "}
   {playing
