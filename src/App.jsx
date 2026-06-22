@@ -17,17 +17,34 @@ function App() {
   const [playlistName, setPlaylistName] = useState("");
   const [totalListeningTime, setTotalListeningTime] = useState(0);
   const [playCount, setPlayCount] = useState({});
+  const [djMessage, setDjMessage] =
+  useState("Welcome to Vibely DJ 🎧");
   const [newSongTitle, setNewSongTitle] = useState("");
   const [newSongArtist, setNewSongArtist] = useState("");
+  const [newSongCover, setNewSongCover] =
+  useState("");
+  const [newSongAudio, setNewSongAudio] =
+  useState("");
+
 
   useEffect(() => {
   fetch("/songs.json")
-    .then((response) => response.json())
-    .then((data) => {
-      setSongs(data);
-      setCurrentSong(data[0]);
-    })
-    .catch((err) => console.error(err));
+  .then((response) => response.json())
+  .then((data) => {
+    const customSongs =
+      JSON.parse(
+        localStorage.getItem("customSongs")
+      ) || [];
+
+    const allSongs = [
+      ...data,
+      ...customSongs,
+    ];
+
+    setSongs(allSongs);
+    setCurrentSong(allSongs[0]);
+  })
+  .catch((err) => console.error(err));
 
   const savedFavorites =
     JSON.parse(localStorage.getItem("favorites")) || [];
@@ -65,9 +82,6 @@ useEffect(() => {
   );
 }, [playlists]);
 
-  if (!currentSong) {
-    return <h1>Loading...</h1>;
-  }
 
  const playSong = () => {
   if (!audioRef.current) return;
@@ -85,6 +99,21 @@ useEffect(() => {
 
   const selectSong = (song) => {
   setCurrentSong(song);
+  const messages = [
+  `🎵 Now spinning ${song.title}!`,
+  `🔥 ${song.artist} is trending in your library!`,
+  `✨ Based on your taste, this is a perfect pick.`,
+  `🎧 DJ Vibely recommends this track for your mood.`,
+  `🚀 This song is climbing your charts!`,
+];
+
+setDjMessage(
+  messages[
+    Math.floor(
+      Math.random() * messages.length
+    )
+  ]
+);
 
   setRecentSongs((prev) => {
     const updated = [
@@ -110,9 +139,11 @@ useEffect(() => {
   });
 
   setTimeout(() => {
+  if (audioRef.current) {
     audioRef.current.play();
     setPlaying(true);
-  }, 100);
+  }
+}, 100);
 };
 
 const topSongs = [...songs]
@@ -227,11 +258,27 @@ useEffect(() => {
   setPlayCount(saved);
 }, []);
 
+useEffect(() => {
+  localStorage.setItem(
+    "playCount",
+    JSON.stringify(playCount)
+  );
+}, [playCount]);
+
+if (!currentSong) {
+  return <h1>Loading...</h1>;
+}
+
 const recommendedSongs =
   songs.filter(
-    song =>
-      song.artist === currentSong.artist &&
-      song.id !== currentSong.id
+    (song) =>
+      favorites.some(
+        (fav) =>
+          fav.artist === song.artist
+      ) &&
+      !favorites.some(
+        (fav) => fav.id === song.id
+      )
   );
 
   const addToPlaylist = (playlistId, song) => {
@@ -240,7 +287,11 @@ const recommendedSongs =
       playlist.id === playlistId
         ? {
             ...playlist,
-            songs: [...playlist.songs, song],
+            songs: playlist.songs.some(
+  (s) => s.id === song.id
+)
+  ? playlist.songs
+  : [...playlist.songs, song],
           }
         : playlist
     )
@@ -256,14 +307,18 @@ const addSong = () => {
     return;
   }
 
-
   const newSong = {
   id: Date.now(),
   title: newSongTitle,
   artist: newSongArtist,
-  cover: "/default-cover.jpg",
-  audio: "/default.mp3",
+  cover:
+    newSongCover ||
+    "/default-cover.jpg",
+  audio:
+    newSongAudio ||
+    "/default.mp3",
 };
+
 
 const savedSongs =
   JSON.parse(localStorage.getItem("customSongs")) || [];
@@ -277,19 +332,37 @@ localStorage.setItem(
 
   setNewSongTitle("");
   setNewSongArtist("");
+  setNewSongCover("");
+  setNewSongAudio("");
 };
 
-useEffect(() => {
-  const savedSongs =
-    JSON.parse(localStorage.getItem("customSongs")) || [];
+const mostPlayedSong =
+  topSongs.length > 0
+    ? topSongs[0]
+    : null;
 
-  if (savedSongs.length > 0) {
-    setSongs(prev => [...prev, ...savedSongs]);
-  }
-}, []);
+const removeFromPlaylist = (
+  playlistId,
+  songId
+) => {
+  setPlaylists(
+    playlists.map((playlist) =>
+      playlist.id === playlistId
+        ? {
+            ...playlist,
+            songs:
+              playlist.songs.filter(
+                (song) =>
+                  song.id !== songId
+              ),
+          }
+        : playlist
+    )
+  );
+};
 
   return (
-   <>
+ <>
   <div className="moon"></div>
 
   <div className="stars">
@@ -373,10 +446,23 @@ useEffect(() => {
 
 {playlists.map((playlist) => (
   <div key={playlist.id}>
-    <h3>{playlist.name}</h3>
+   <h3>
+  {playlist.name} ({playlist.songs.length})
+</h3>
     {playlist.songs.map((song) => (
   <p key={song.id}>
     🎵 {song.title}
+
+    <button
+      onClick={() =>
+        removeFromPlaylist(
+          playlist.id,
+          song.id
+        )
+      }
+    >
+      ❌
+    </button>
   </p>
 ))}
     <button onClick={() => deletePlaylist(playlist.id)}>
@@ -447,28 +533,47 @@ useEffect(() => {
               <p>{song.artist}</p>
 
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(song);
-                }}
-              >
-                {favorites.some(
-                  (fav) => fav.id === song.id
-                )
-                  ? "❤️"
-                  : "🤍"}
-              </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    toggleFavorite(song);
+  }}
+>
+  {favorites.some(
+    (fav) => fav.id === song.id
+  )
+    ? "❤️"
+    : "🤍"}
+</button>
+
+<select
+  onClick={(e) => e.stopPropagation()}
+  onChange={(e) => {
+    if (e.target.value) {
+      addToPlaylist(
+        Number(e.target.value),
+        song
+      );
+    }
+  }}
+>
+  <option value="">
+    Add to Playlist
+  </option>
+
+  {playlists.map((playlist) => (
+    <option
+      key={playlist.id}
+      value={playlist.id}
+    >
+      {playlist.name}
+    </option>
+  ))}
+</select>
             </div>
           ))}
         </div>
-<select
-  onChange={(e) =>
-    addToPlaylist(
-      Number(e.target.value),
-      song
-    )
-  }
-></select>
+
+        
        <div className="now-playing">
   <h2>🎵 Now Playing</h2>
 
@@ -550,6 +655,25 @@ useEffect(() => {
   min
 </p>
 
+<p>
+  Favorites:
+  {favorites.length}
+</p>
+
+<p>
+  Playlists:
+  {playlists.length}
+</p>
+
+<p>
+  Songs Played:
+  {Object.values(playCount).reduce(
+    (a, b) => a + b,
+    0
+  )}
+</p>
+
+
 <h2>🔥 On Repeat</h2>
 
 <div className="song-list">
@@ -610,6 +734,22 @@ useEffect(() => {
   }
 />
 
+<input
+  placeholder="Cover URL"
+  value={newSongCover}
+  onChange={(e) =>
+    setNewSongCover(e.target.value)
+  }
+/>
+
+<input
+  placeholder="Audio URL"
+  value={newSongAudio}
+  onChange={(e) =>
+    setNewSongAudio(e.target.value)
+  }
+/>
+
 <button onClick={addSong}>
   Add Song
 </button>
@@ -617,42 +757,33 @@ useEffect(() => {
         <br />
         <br />
 
-        <audio
-          ref={audioRef}
-          controls
-          src={currentSong.audio}
-          onEnded={nextSong}
-           onTimeUpdate={() => {
-  setProgress(
-    (audioRef.current.currentTime /
-      audioRef.current.duration) *
-      100 || 0
-  );
-}}
+       <audio
+  ref={audioRef}
+  controls
+  src={currentSong.audio}
+  onEnded={nextSong}
+  onTimeUpdate={() => {
+    setProgress(
+      ((audioRef.current?.currentTime || 0) /
+        (audioRef.current?.duration || 1)) *
+        100
+    );
+  }}
 />
-      </div>
-
-  <option>Add to Playlist</option>
-
-  {playlists.map((playlist) => (
-    <option
-      key={playlist.id}
-      value={playlist.id}
-    >
-      {playlist.name}
-    </option>
-  ))}
 
 <p>Favorites: {favorites.length}</p>
 
-<p>
-  Recently Played:
-  {recentSongs.length}
-</p>
+<p>Recently Played: {recentSongs.length}</p>
+
+<p>Total Songs: {songs.length}</p>
+
+<p>Playlists: {playlists.length}</p>
 
 <p>
-  Total Songs:
-  {songs.length}
+  Most Played:{" "}
+  {mostPlayedSong
+    ? mostPlayedSong.title
+    : "None"}
 </p>
 
 <div className="player">
@@ -670,10 +801,17 @@ useEffect(() => {
     </div>
   )}
 </div>
-</div>
-</>
 
-  );
+<h2>🎧 AI DJ</h2>
+
+<div className="dj-box">
+  {djMessage}
+</div>
+
+</div> {/* main */}
+</div> {/* app */}
+</>
+);
 }
 
 export default App;
