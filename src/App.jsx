@@ -25,6 +25,7 @@ function App() {
   useState("");
   const [newSongAudio, setNewSongAudio] =
   useState("");
+  const [queue, setQueue] = useState([]);
 
 
   useEffect(() => {
@@ -88,6 +89,12 @@ useEffect(() => {
 
   audioRef.current.play();
   setPlaying(true);
+
+  setPlayCount((prev) => ({
+    ...prev,
+    [currentSong.id]:
+      (prev[currentSong.id] || 0) + 1,
+  }));
 };
 
   const pauseSong = () => {
@@ -121,20 +128,6 @@ setDjMessage(
       ...prev.filter((s) => s.id !== song.id),
     ];
     
-    setPlayCount((prev) => {
-  const updated = {
-    ...prev,
-    [song.id]: (prev[song.id] || 0) + 1,
-  };
-
-  localStorage.setItem(
-    "playCount",
-    JSON.stringify(updated)
-  );
-
-  return updated;
-});
-
     return updated.slice(0, 10);
   });
 
@@ -155,24 +148,36 @@ const topSongs = [...songs]
   .slice(0, 5);
 
   const nextSong = () => {
-    if (shuffle) {
-      const randomIndex = Math.floor(
-        Math.random() * songs.length
-      );
+  // Play queued songs first
+  if (queue.length > 0) {
+    const nextQueuedSong = queue[0];
 
-      selectSong(songs[randomIndex]);
+    setQueue((prev) => prev.slice(1));
 
-      return;
-    }
+    selectSong(nextQueuedSong);
+    return;
+  }
 
-    const currentIndex = songs.findIndex(
-      (song) => song.id === currentSong.id
+  // Shuffle mode
+  if (shuffle) {
+    const randomIndex = Math.floor(
+      Math.random() * songs.length
     );
 
-    const nextIndex = (currentIndex + 1) % songs.length;
+    selectSong(songs[randomIndex]);
+    return;
+  }
 
-    selectSong(songs[nextIndex]);
-  };
+  // Normal next song
+  const currentIndex = songs.findIndex(
+    (song) => song.id === currentSong.id
+  );
+
+  const nextIndex =
+    (currentIndex + 1) % songs.length;
+
+  selectSong(songs[nextIndex]);
+};
 
   const prevSong = () => {
     const currentIndex = songs.findIndex(
@@ -280,6 +285,14 @@ const recommendedSongs =
         (fav) => fav.id === song.id
       )
   );
+
+  const addToQueue = (song) => {
+  setQueue((prev) =>
+    prev.some((s) => s.id === song.id)
+      ? prev
+      : [...prev, song]
+  );
+};
 
   const addToPlaylist = (playlistId, song) => {
   setPlaylists(
@@ -545,6 +558,15 @@ const removeFromPlaylist = (
     : "🤍"}
 </button>
 
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    addToQueue(song);
+  }}
+>
+  ➕ Queue
+</button>
+
 <select
   onClick={(e) => e.stopPropagation()}
   onChange={(e) => {
@@ -572,7 +594,19 @@ const removeFromPlaylist = (
             </div>
           ))}
         </div>
+<h2>📋 Queue</h2>
 
+<div className="song-list">
+  {queue.map((song, index) => (
+    <div
+      key={index}
+      className="song-card"
+    >
+      <h3>{song.title}</h3>
+      <p>{song.artist}</p>
+    </div>
+  ))}
+</div>
         
        <div className="now-playing">
   <h2>🎵 Now Playing</h2>
