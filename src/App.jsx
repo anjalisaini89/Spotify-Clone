@@ -17,835 +17,499 @@ function App() {
   const [playlistName, setPlaylistName] = useState("");
   const [totalListeningTime, setTotalListeningTime] = useState(0);
   const [playCount, setPlayCount] = useState({});
-  const [djMessage, setDjMessage] =
-  useState("Welcome to Vibely DJ 🎧");
+  const [djMessage, setDjMessage] = useState("Welcome to Vibely DJ 🎧");
   const [newSongTitle, setNewSongTitle] = useState("");
   const [newSongArtist, setNewSongArtist] = useState("");
-  const [newSongCover, setNewSongCover] =
-  useState("");
-  const [newSongAudio, setNewSongAudio] =
-  useState("");
+  const [newSongCover, setNewSongCover] = useState("");
+  const [newSongAudio, setNewSongAudio] = useState("");
   const [queue, setQueue] = useState([]);
-
+  const [theme, setTheme] = useState("dark");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-  fetch("/songs.json")
-  .then((response) => response.json())
-  .then((data) => {
-    const customSongs =
-      JSON.parse(
-        localStorage.getItem("customSongs")
-      ) || [];
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
-    const allSongs = [
-      ...data,
-      ...customSongs,
-    ];
+  useEffect(() => {
+    fetch("/songs.json")
+      .then((r) => r.json())
+      .then((data) => {
+        const custom = JSON.parse(localStorage.getItem("customSongs")) || [];
+        const all = [...data, ...custom];
+        setSongs(all);
+        setCurrentSong(all[0]);
+      })
+      .catch(console.error);
+    setFavorites(JSON.parse(localStorage.getItem("favorites")) || []);
+    setRecentSongs(JSON.parse(localStorage.getItem("recentSongs")) || []);
+    setPlaylists(JSON.parse(localStorage.getItem("playlists")) || []);
+    setPlayCount(JSON.parse(localStorage.getItem("playCount")) || {});
+    setTotalListeningTime(Number(localStorage.getItem("listeningTime")) || 0);
+  }, []);
 
-    setSongs(allSongs);
-    setCurrentSong(allSongs[0]);
-  })
-  .catch((err) => console.error(err));
+  useEffect(() => { localStorage.setItem("favorites", JSON.stringify(favorites)); }, [favorites]);
+  useEffect(() => { localStorage.setItem("recentSongs", JSON.stringify(recentSongs)); }, [recentSongs]);
+  useEffect(() => { localStorage.setItem("playlists", JSON.stringify(playlists)); }, [playlists]);
+  useEffect(() => { localStorage.setItem("playCount", JSON.stringify(playCount)); }, [playCount]);
 
-  const savedFavorites =
-    JSON.parse(localStorage.getItem("favorites")) || [];
+  useEffect(() => {
+    let timer;
+    if (playing) {
+      timer = setInterval(() => {
+        setTotalListeningTime((prev) => {
+          const u = prev + 1;
+          localStorage.setItem("listeningTime", u);
+          return u;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [playing]);
 
-  const savedRecentSongs =
-    JSON.parse(localStorage.getItem("recentSongs")) || [];
-
-  setFavorites(savedFavorites);
-  setRecentSongs(savedRecentSongs);
-}, []);
-
-useEffect(() => {
-  localStorage.setItem(
-    "favorites",
-    JSON.stringify(favorites)
-  );
-}, [favorites]);
-useEffect(() => {
-  localStorage.setItem(
-    "recentSongs",
-    JSON.stringify(recentSongs)
-  );
-}, [recentSongs]);
-useEffect(() => {
-  const savedPlaylists =
-    JSON.parse(localStorage.getItem("playlists")) || [];
-
-  setPlaylists(savedPlaylists);
-}, []);
-
-useEffect(() => {
-  localStorage.setItem(
-    "playlists",
-    JSON.stringify(playlists)
-  );
-}, [playlists]);
-
-
- const playSong = () => {
-  if (!audioRef.current) return;
-
-  audioRef.current.play();
-  setPlaying(true);
-
-  setPlayCount((prev) => ({
-    ...prev,
-    [currentSong.id]:
-      (prev[currentSong.id] || 0) + 1,
-  }));
-};
-
-  const pauseSong = () => {
-  if (!audioRef.current) return;
-
-  audioRef.current.pause();
-  setPlaying(false);
-};
-
-  const selectSong = (song) => {
-  setCurrentSong(song);
-  const messages = [
-  `🎵 Now spinning ${song.title}!`,
-  `🔥 ${song.artist} is trending in your library!`,
-  `✨ Based on your taste, this is a perfect pick.`,
-  `🎧 DJ Vibely recommends this track for your mood.`,
-  `🚀 This song is climbing your charts!`,
-];
-
-setDjMessage(
-  messages[
-    Math.floor(
-      Math.random() * messages.length
-    )
-  ]
-);
-
-  setRecentSongs((prev) => {
-    const updated = [
-      song,
-      ...prev.filter((s) => s.id !== song.id),
-    ];
-    
-    return updated.slice(0, 10);
-  });
-
-  setTimeout(() => {
-  if (audioRef.current) {
+  const playSong = () => {
+    if (!audioRef.current) return;
     audioRef.current.play();
     setPlaying(true);
-  }
-}, 100);
-};
+    setPlayCount((prev) => ({ ...prev, [currentSong.id]: (prev[currentSong.id] || 0) + 1 }));
+  };
 
-const topSongs = [...songs]
-  .sort(
-    (a, b) =>
-      (playCount[b.id] || 0) -
-      (playCount[a.id] || 0)
-  )
-  .slice(0, 5);
+  const pauseSong = () => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    setPlaying(false);
+  };
+
+  const selectSong = (song) => {
+    setCurrentSong(song);
+    const msgs = [
+      `🎵 Now spinning ${song.title}!`,
+      `🔥 ${song.artist} is trending in your library!`,
+      `✨ Based on your taste, this is a perfect pick.`,
+      `🎧 DJ Vibely recommends this track for your mood.`,
+      `🚀 This song is climbing your charts!`,
+    ];
+    setDjMessage(msgs[Math.floor(Math.random() * msgs.length)]);
+    setRecentSongs((prev) => [song, ...prev.filter((s) => s.id !== song.id)].slice(0, 10));
+    setTimeout(() => {
+      if (audioRef.current) { audioRef.current.play(); setPlaying(true); }
+    }, 100);
+  };
+
+  const topSongs = [...songs]
+    .sort((a, b) => (playCount[b.id] || 0) - (playCount[a.id] || 0))
+    .slice(0, 5);
 
   const nextSong = () => {
-  // Play queued songs first
-  if (queue.length > 0) {
-    const nextQueuedSong = queue[0];
-
-    setQueue((prev) => prev.slice(1));
-
-    selectSong(nextQueuedSong);
-    return;
-  }
-
-  // Shuffle mode
-  if (shuffle) {
-    const randomIndex = Math.floor(
-      Math.random() * songs.length
-    );
-
-    selectSong(songs[randomIndex]);
-    return;
-  }
-
-  // Normal next song
-  const currentIndex = songs.findIndex(
-    (song) => song.id === currentSong.id
-  );
-
-  const nextIndex =
-    (currentIndex + 1) % songs.length;
-
-  selectSong(songs[nextIndex]);
-};
+    if (queue.length > 0) {
+      const next = queue[0];
+      setQueue((p) => p.slice(1));
+      selectSong(next);
+      return;
+    }
+    if (shuffle) { selectSong(songs[Math.floor(Math.random() * songs.length)]); return; }
+    const idx = songs.findIndex((s) => s.id === currentSong.id);
+    selectSong(songs[(idx + 1) % songs.length]);
+  };
 
   const prevSong = () => {
-    const currentIndex = songs.findIndex(
-      (song) => song.id === currentSong.id
-    );
-
-    const prevIndex =
-      (currentIndex - 1 + songs.length) % songs.length;
-
-    selectSong(songs[prevIndex]);
+    const idx = songs.findIndex((s) => s.id === currentSong.id);
+    selectSong(songs[(idx - 1 + songs.length) % songs.length]);
   };
 
   const toggleFavorite = (song) => {
-    if (favorites.some((fav) => fav.id === song.id)) {
-      setFavorites(
-        favorites.filter((fav) => fav.id !== song.id)
-      );
-    } else {
-      setFavorites([...favorites, song]);
-    }
+    setFavorites((prev) =>
+      prev.some((f) => f.id === song.id)
+        ? prev.filter((f) => f.id !== song.id)
+        : [...prev, song]
+    );
   };
 
-  const filteredSongs = songs.filter(
-    (song) =>
-      song.title
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      song.artist
-        .toLowerCase()
-        .includes(search.toLowerCase())
+  const filteredSongs = songs.filter((s) =>
+    s.title.toLowerCase().includes(search.toLowerCase()) ||
+    s.artist.toLowerCase().includes(search.toLowerCase())
   );
 
   const createPlaylist = () => {
-  if (!playlistName.trim()) return;
-
-  const newPlaylist = {
-    id: Date.now(),
-    name: playlistName,
-    songs: [],
+    if (!playlistName.trim()) return;
+    setPlaylists([...playlists, { id: Date.now(), name: playlistName, songs: [] }]);
+    setPlaylistName("");
   };
 
-  setPlaylists([...playlists, newPlaylist]);
-  setPlaylistName("");
-};
-const deletePlaylist = (id) => {
-  setPlaylists(
-    playlists.filter((playlist) => playlist.id !== id)
-  );
-};
+  const deletePlaylist = (id) => setPlaylists(playlists.filter((p) => p.id !== id));
 
-useEffect(() => {
-  const savedTime =
-    Number(localStorage.getItem("listeningTime")) || 0;
-
-  setTotalListeningTime(savedTime);
-}, []);
-
-useEffect(() => {
-  let timer;
-
-  if (playing) {
-    timer = setInterval(() => {
-      setTotalListeningTime((prev) => {
-        const updated = prev + 1;
-
-        localStorage.setItem(
-          "listeningTime",
-          updated
-        );
-
-        return updated;
-      });
-    }, 1000);
-  }
-
-  return () => clearInterval(timer);
-}, [playing]);
-
-useEffect(() => {
-  const saved =
-    JSON.parse(localStorage.getItem("playCount")) || {};
-
-  setPlayCount(saved);
-}, []);
-
-useEffect(() => {
-  localStorage.setItem(
-    "playCount",
-    JSON.stringify(playCount)
-  );
-}, [playCount]);
-
-if (!currentSong) {
-  return <h1>Loading...</h1>;
-}
-
-const recommendedSongs =
-  songs.filter(
-    (song) =>
-      favorites.some(
-        (fav) =>
-          fav.artist === song.artist
-      ) &&
-      !favorites.some(
-        (fav) => fav.id === song.id
-      )
-  );
-
-  const addToQueue = (song) => {
-  setQueue((prev) =>
-    prev.some((s) => s.id === song.id)
-      ? prev
-      : [...prev, song]
-  );
-};
+  const addToQueue = (song) =>
+    setQueue((prev) => prev.some((s) => s.id === song.id) ? prev : [...prev, song]);
 
   const addToPlaylist = (playlistId, song) => {
-  setPlaylists(
-    playlists.map((playlist) =>
-      playlist.id === playlistId
-        ? {
-            ...playlist,
-            songs: playlist.songs.some(
-  (s) => s.id === song.id
-)
-  ? playlist.songs
-  : [...playlist.songs, song],
-          }
-        : playlist
-    )
+    setPlaylists(playlists.map((p) =>
+      p.id === playlistId
+        ? { ...p, songs: p.songs.some((s) => s.id === song.id) ? p.songs : [...p.songs, song] }
+        : p
+    ));
+  };
+
+  const removeFromPlaylist = (playlistId, songId) => {
+    setPlaylists(playlists.map((p) =>
+      p.id === playlistId ? { ...p, songs: p.songs.filter((s) => s.id !== songId) } : p
+    ));
+  };
+
+  const addSong = () => {
+    if (!newSongTitle.trim() || !newSongArtist.trim()) { alert("Please enter title and artist"); return; }
+    const newSong = {
+      id: Date.now(), title: newSongTitle, artist: newSongArtist,
+      cover: newSongCover || "/default-cover.jpg", audio: newSongAudio || "/default.mp3"
+    };
+    const saved = JSON.parse(localStorage.getItem("customSongs")) || [];
+    localStorage.setItem("customSongs", JSON.stringify([...saved, newSong]));
+    setSongs([...songs, newSong]);
+    setNewSongTitle(""); setNewSongArtist(""); setNewSongCover(""); setNewSongAudio("");
+  };
+
+  const recommendedSongs = songs.filter((s) =>
+    favorites.some((f) => f.artist === s.artist) && !favorites.some((f) => f.id === s.id)
   );
-};
 
-const addSong = () => {
-  if (
-    !newSongTitle.trim() ||
-    !newSongArtist.trim()
-  ) {
-    alert("Please enter title and artist");
-    return;
-  }
+  const mostPlayedSong = topSongs[0] || null;
 
-  const newSong = {
-  id: Date.now(),
-  title: newSongTitle,
-  artist: newSongArtist,
-  cover:
-    newSongCover ||
-    "/default-cover.jpg",
-  audio:
-    newSongAudio ||
-    "/default.mp3",
-};
-
-
-const savedSongs =
-  JSON.parse(localStorage.getItem("customSongs")) || [];
-
-localStorage.setItem(
-  "customSongs",
-  JSON.stringify([...savedSongs, newSong])
-);
-
-  setSongs([...songs, newSong]);
-
-  setNewSongTitle("");
-  setNewSongArtist("");
-  setNewSongCover("");
-  setNewSongAudio("");
-};
-
-const mostPlayedSong =
-  topSongs.length > 0
-    ? topSongs[0]
-    : null;
-
-const removeFromPlaylist = (
-  playlistId,
-  songId
-) => {
-  setPlaylists(
-    playlists.map((playlist) =>
-      playlist.id === playlistId
-        ? {
-            ...playlist,
-            songs:
-              playlist.songs.filter(
-                (song) =>
-                  song.id !== songId
-              ),
-          }
-        : playlist
-    )
-  );
-};
+  if (!currentSong) return <h1 style={{ color: "white", padding: 40 }}>Loading...</h1>;
 
   return (
- <>
-  <div className="moon"></div>
-
-  <div className="stars">
-  {[...Array(30)].map((_, i) => (
-    <span
-      key={i}
-      style={{
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-      }}
-    />
-  ))}
-</div>
-
-<div className="fireflies">
-  {[...Array(12)].map((_, i) => (
-    <span key={i}></span>
-  ))}
-</div>
-
-<img
-  src="/tree.png"
-  className="tree-decoration"
-  alt="Cherry Blossom Tree"
-/>
-
-<div className="petals">
-  {[...Array(15)].map((_, i) => (
-    <span key={i}></span>
-  ))}
-</div>
-
-<div className="app">
-      <div className="sidebar">
-        <h2>Vibely</h2>
-
-        <Login />
-
-        <div className="menu-item">🏠 Home</div>
-        <div className="menu-item">🔍 Search</div>
-        <div className="menu-item">📚 Library</div>
+    <>
+      {/* BG decorations */}
+      <div className="moon" />
+      <div className="stars">
+        {[...Array(30)].map((_, i) => (
+          <span key={i} style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />
+        ))}
       </div>
+      <div className="fireflies">{[...Array(12)].map((_, i) => <span key={i} />)}</div>
+      <img src="/tree.png" className="tree-decoration" alt="" />
+      <div className="petals">{[...Array(15)].map((_, i) => <span key={i} />)}</div>
 
-      <div className="main">
-        <h1>Vibely Library</h1>
+      {/* Audio */}
+      <audio
+        ref={audioRef}
+        src={currentSong.audio}
+        onEnded={nextSong}
+        onTimeUpdate={() => {
+          setProgress(
+            ((audioRef.current?.currentTime || 0) / (audioRef.current?.duration || 1)) * 100
+          );
+        }}
+      />
 
-        <input
-          type="text"
-          placeholder="Search songs..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
+      <div className="app">
+
+        {/* ── SIDEBAR ── */}
+        <div className={`sidebar ${sidebarOpen ? "sidebar-open" : "sidebar-collapsed"}`}>
+          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? "◀" : "▶"}
+          </button>
+
+          <h2 className="sidebar-logo">{sidebarOpen ? "Vibely" : "V"}</h2>
+
+          {sidebarOpen && <Login />}
+
+          <div className="menu-item">🏠 {sidebarOpen && "Home"}</div>
+          <div className="menu-item">🔍 {sidebarOpen && "Search"}</div>
+          <div className="menu-item">📚 {sidebarOpen && "Library"}</div>
+          <div className="menu-item">❤️ {sidebarOpen && "Favorites"}</div>
+          <div className="menu-item">📂 {sidebarOpen && "Playlists"}</div>
+          <div
+            className="menu-item"
+            onClick={() => setTheme((t) => t === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? "🌸" : "🌙"} {sidebarOpen && (theme === "dark" ? "Light Mode" : "Dark Mode")}
+          </div>
+        </div>
+
+        {/* ── MAIN ── */}
+        <div className="main">
+
+          {/* Stats */}
+          <div className="stats-grid">
+            <div className="stat-card"><h3>⏱ Listen Time</h3><p>{Math.floor(totalListeningTime / 60)} min</p></div>
+            <div className="stat-card"><h3>❤️ Favorites</h3><p>{favorites.length}</p></div>
+            <div className="stat-card"><h3>📂 Playlists</h3><p>{playlists.length}</p></div>
+            <div className="stat-card"><h3>🎵 Played</h3><p>{Object.values(playCount).reduce((a, b) => a + b, 0)}</p></div>
+            <div className="stat-card"><h3>🔥 Top Track</h3><p style={{ fontSize: 13 }}>{mostPlayedSong?.title || "—"}</p></div>
+          </div>
+
+          <br />
+
+          {/* Search */}
+          <div className="search-container">
+            <span>🔍</span>
+            <input
+              className="search-bar"
+              type="text"
+              placeholder="Search songs, artists..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <br />
+
+          <button onClick={() => setShuffle(!shuffle)}>
+            {shuffle ? "🔀 Shuffle ON" : "🔀 Shuffle OFF"}
+          </button>
+
+          <br /><br />
+
+          {/* ── NOW PLAYING ── */}
+<div className="np-island">
+  {/* Blurred bg art */}
+  <div
+    className="np-bg-art"
+    style={{ backgroundImage: `url(${currentSong.cover})` }}
+  />
+
+  {/* Floating glow orbs */}
+  <div className="np-orb np-orb-1" />
+  <div className="np-orb np-orb-2" />
+
+  {/* Content */}
+  <div className="np-content">
+
+    {/* Album art */}
+    <div className="np-cover-ring">
+      <div className="np-cover-ring-inner">
+        <img
+          src={currentSong.cover}
+          alt={currentSong.title}
+          className={`np-cover ${playing ? "np-cover-playing" : ""}`}
         />
+      </div>
+    </div>
 
-        <br />
-        <br />
+    {/* Sakura petals floating inside card */}
+    <div className="np-petals">
+      <span>🌸</span><span>🌸</span><span>🌸</span>
+    </div>
 
-        <button
-          onClick={() =>
-            setShuffle(!shuffle)
-          }
-        >
-          {shuffle
-            ? "🔀 Shuffle ON"
-            : "🔀 Shuffle OFF"}
-        </button>
-      <h2>📂 Create Playlist</h2>
+    {/* Song info */}
+    <div className="np-info">
+      <p className="np-now-label">✦ NOW PLAYING ✦</p>
+      <h2 className="np-title">{currentSong.title}</h2>
+      <p className="np-artist">{currentSong.artist}</p>
+    </div>
 
-<input
-  type="text"
-  placeholder="Playlist name"
-  value={playlistName}
-  onChange={(e) => setPlaylistName(e.target.value)}
-/>
+    {/* Progress */}
+    <div className="np-progress-wrap">
+      <span className="np-time">
+        {audioRef.current
+          ? new Date(audioRef.current.currentTime * 1000).toISOString().substr(14, 5)
+          : "0:00"}
+      </span>
+      <input
+        className="np-progress"
+        type="range" min="0" max="100" value={progress}
+        onChange={(e) => {
+          setProgress(e.target.value);
+          if (audioRef.current)
+            audioRef.current.currentTime = (e.target.value / 100) * audioRef.current.duration;
+        }}
+      />
+      <span className="np-time">
+        {audioRef.current?.duration
+          ? new Date(audioRef.current.duration * 1000).toISOString().substr(14, 5)
+          : "0:00"}
+      </span>
+    </div>
 
-<button onClick={createPlaylist}>
-  Create Playlist
-</button>
-<h2>🎶 Your Playlists</h2>
+    {/* Controls */}
+    <div className="np-controls">
+      <button className="np-btn-sm" onClick={() => setShuffle(!shuffle)}>
+        {shuffle ? "🔀" : "🔁"}
+      </button>
+      <button className="np-btn" onClick={prevSong}>⏮</button>
+      <button className="np-btn-play" onClick={playing ? pauseSong : playSong}>
+        {playing ? "⏸" : "▶"}
+      </button>
+      <button className="np-btn" onClick={nextSong}>⏭</button>
+      <button
+        className="np-btn-sm"
+        onClick={() => toggleFavorite(currentSong)}
+      >
+        {favorites.some((f) => f.id === currentSong.id) ? "❤️" : "🤍"}
+      </button>
+    </div>
 
-{playlists.map((playlist) => (
-  <div key={playlist.id}>
-   <h3>
-  {playlist.name} ({playlist.songs.length})
-</h3>
-    {playlist.songs.map((song) => (
-  <p key={song.id}>
-    🎵 {song.title}
+    {/* Volume */}
+    <div className="np-volume">
+      <span>🔈</span>
+      <input
+        className="np-vol-slider"
+        type="range" min="0" max="1" step="0.05" value={volume}
+        onChange={(e) => {
+          setVolume(Number(e.target.value));
+          if (audioRef.current) audioRef.current.volume = Number(e.target.value);
+        }}
+      />
+      <span>🔊</span>
+    </div>
 
-    <button
-      onClick={() =>
-        removeFromPlaylist(
-          playlist.id,
-          song.id
-        )
-      }
-    >
-      ❌
-    </button>
-  </p>
-))}
-    <button onClick={() => deletePlaylist(playlist.id)}>
-  🗑 Delete
-</button>
+    {/* Visualizer bars when playing */}
+    {playing && (
+      <div className="np-visualizer">
+        <span /><span /><span /><span /><span /><span /><span />
+      </div>
+    )}
+
   </div>
-))}
-
-<h2>❤️ Favorite Songs</h2>
-
-<div className="song-list">
-  {favorites.map((song) => (
-    <div
-      key={song.id}
-      className="song-card"
-      onClick={() => selectSong(song)}
-    >
-      <img
-        src={song.cover}
-        alt={song.title}
-        className="cover"
-      />
-
-      <h3>{song.title}</h3>
-      <p>{song.artist}</p>
-    </div>
-  ))}
 </div>
 
-<h2>🕒 Recently Played</h2>
+          {/* Recently Played */}
+          {recentSongs.length > 0 && (
+            <>
+              <h2>🕒 Recently Played</h2>
+              <div className="song-list">
+                {recentSongs.map((song) => (
+                  <div key={song.id} className="song-card" onClick={() => selectSong(song)}>
+                    <img src={song.cover} alt={song.title} className="cover" />
+                    <h3>{song.title}</h3><p>{song.artist}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-<div className="song-list">
-  {recentSongs.map((song) => (
-    <div
-      key={song.id}
-      className="song-card"
-      onClick={() => selectSong(song)}
-    >
-      <img
-        src={song.cover}
-        alt={song.title}
-        className="cover"
-      />
+          {/* All Songs */}
+          <h2>🎵 All Songs</h2>
+          <div className="song-list">
+            {filteredSongs.map((song) => (
+              <div key={song.id} className="song-card" onClick={() => selectSong(song)}>
+                <img src={song.cover} alt={song.title} className="cover" />
+                <h3>{song.title}</h3><p>{song.artist}</p>
+                <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                  <button onClick={(e) => { e.stopPropagation(); toggleFavorite(song); }}>
+                    {favorites.some((f) => f.id === song.id) ? "❤️" : "🤍"}
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); addToQueue(song); }}>➕</button>
+                  <select
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { if (e.target.value) addToPlaylist(Number(e.target.value), song); }}
+                    style={{ borderRadius: 20, padding: "4px 8px", background: "rgba(255,255,255,0.1)", color: "white", border: "1px solid rgba(255,255,255,0.2)" }}
+                  >
+                    <option value="">+ Playlist</option>
+                    {playlists.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      <h3>{song.title}</h3>
-      <p>{song.artist}</p>
-    </div>
-  ))}
-</div>
-<h2>🎵 All Songs</h2>
+          {/* Favorites */}
+          {favorites.length > 0 && (
+            <>
+              <h2>❤️ Favorite Songs</h2>
+              <div className="song-list">
+                {favorites.map((song) => (
+                  <div key={song.id} className="song-card" onClick={() => selectSong(song)}>
+                    <img src={song.cover} alt={song.title} className="cover" />
+                    <h3>{song.title}</h3><p>{song.artist}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-<br />
+          {/* On Repeat */}
+          {topSongs.length > 0 && (
+            <>
+              <h2>🔥 On Repeat</h2>
+              <div className="song-list">
+                {topSongs.map((song) => (
+                  <div key={song.id} className="song-card" onClick={() => selectSong(song)}>
+                    <img src={song.cover} alt={song.title} className="cover" />
+                    <h3>{song.title}</h3><p>{song.artist}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-        <div className="song-list">
-          {filteredSongs.map((song) => (
-            <div
-              key={song.id}
-              className="song-card"
-              onClick={() => selectSong(song)}
-            >
-              <img
-                src={song.cover}
-                alt={song.title}
-                className="cover"
-              />
+          {/* Recommended */}
+          {recommendedSongs.length > 0 && (
+            <>
+              <h2>✨ Recommended For You</h2>
+              <div className="song-list">
+                {recommendedSongs.map((song) => (
+                  <div key={song.id} className="song-card" onClick={() => selectSong(song)}>
+                    <img src={song.cover} alt={song.title} className="cover" />
+                    <h3>{song.title}</h3><p>{song.artist}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-              <h3>{song.title}</h3>
-              <p>{song.artist}</p>
-
-              <button
-  onClick={(e) => {
-    e.stopPropagation();
-    toggleFavorite(song);
-  }}
->
-  {favorites.some(
-    (fav) => fav.id === song.id
-  )
-    ? "❤️"
-    : "🤍"}
-</button>
-
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    addToQueue(song);
-  }}
->
-  ➕ Queue
-</button>
-
-<select
-  onClick={(e) => e.stopPropagation()}
-  onChange={(e) => {
-    if (e.target.value) {
-      addToPlaylist(
-        Number(e.target.value),
-        song
-      );
-    }
-  }}
->
-  <option value="">
-    Add to Playlist
-  </option>
-
-  {playlists.map((playlist) => (
-    <option
-      key={playlist.id}
-      value={playlist.id}
-    >
-      {playlist.name}
-    </option>
-  ))}
-</select>
+          {/* Playlists */}
+          <h2>📂 Create Playlist</h2>
+          <input type="text" placeholder="Playlist name" value={playlistName}
+            onChange={(e) => setPlaylistName(e.target.value)} />
+          <button onClick={createPlaylist}>Create</button>
+          <br /><br />
+          {playlists.map((playlist) => (
+            <div key={playlist.id} style={{ marginBottom: 20 }}>
+              <h3>{playlist.name} ({playlist.songs.length} songs)</h3>
+              {playlist.songs.map((song) => (
+                <p key={song.id} style={{ color: "var(--text-dim)", margin: "6px 0" }}>
+                  🎵 {song.title}
+                  <button style={{ marginLeft: 8, padding: "4px 10px" }}
+                    onClick={() => removeFromPlaylist(playlist.id, song.id)}>❌</button>
+                </p>
+              ))}
+              <button onClick={() => deletePlaylist(playlist.id)}>🗑 Delete</button>
             </div>
           ))}
+
+          {/* Queue */}
+          {queue.length > 0 && (
+            <>
+              <h2>📋 Queue ({queue.length})</h2>
+              <div className="song-list">
+                {queue.map((song, i) => (
+                  <div key={i} className="song-card">
+                    <h3>{song.title}</h3><p>{song.artist}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Add Song */}
+          <h2>➕ Add Song</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 }}>
+            <input placeholder="Title" value={newSongTitle} onChange={(e) => setNewSongTitle(e.target.value)} />
+            <input placeholder="Artist" value={newSongArtist} onChange={(e) => setNewSongArtist(e.target.value)} />
+            <input placeholder="Cover URL" value={newSongCover} onChange={(e) => setNewSongCover(e.target.value)} />
+            <input placeholder="Audio URL" value={newSongAudio} onChange={(e) => setNewSongAudio(e.target.value)} />
+            <button onClick={addSong}>Add Song</button>
+          </div>
+
+          {/* AI DJ */}
+          <br />
+          <h2>🎧 AI DJ</h2>
+          <div className="dj-box">{djMessage}</div>
+          <br /><br />
+
         </div>
-<h2>📋 Queue</h2>
+      </div>
 
-<div className="song-list">
-  {queue.map((song, index) => (
-    <div
-      key={index}
-      className="song-card"
-    >
-      <h3>{song.title}</h3>
-      <p>{song.artist}</p>
-    </div>
-  ))}
-</div>
-        
-       <div className="now-playing">
-  <h2>🎵 Now Playing</h2>
-
-  <img
-  src={currentSong.cover}
-  alt={currentSong.title}
-  className={`current-cover ${playing ? "playing" : ""}`}
-/>
-
-  <h3>{currentSong.title}</h3>
-  <p>{currentSong.artist}</p>
-</div>
-        <button onClick={prevSong}>
-          ⏮ Previous
-        </button>
-
-        <button onClick={playSong}>
-          ▶ Play
-        </button>
-
-        <button onClick={pauseSong}>
-          ⏸ Pause
-        </button>
-
-        <button onClick={nextSong}>
-          ⏭ Next
-        </button>
-
-        <br />
-        <br />
-
-        <h3>Volume</h3>
-
-<input
-  type="range"
-  min="0"
-  max="1"
-  step="0.1"
-  value={volume}
-  onChange={(e) => {
-    const newVolume = Number(e.target.value);
-
-    setVolume(newVolume);
-
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
-  }}
-/>
-
-        <br />
-        <br />
-
-        <h3>Progress</h3>
-
-        <input
-  type="range"
-  min="0"
-  max="100"
-  value={progress}
-  onChange={(e) => {
-    const newProgress = e.target.value;
-
-    setProgress(newProgress);
-
-    if (audioRef.current) {
-      audioRef.current.currentTime =
-        (newProgress / 100) *
-        audioRef.current.duration;
-    }
-  }}
-/>
-<h2>📊 Stats</h2>
-
-<p>
-  Total Listening Time:
-  {" "}
-  {Math.floor(totalListeningTime / 60)}
-  min
-</p>
-
-<p>
-  Favorites:
-  {favorites.length}
-</p>
-
-<p>
-  Playlists:
-  {playlists.length}
-</p>
-
-<p>
-  Songs Played:
-  {Object.values(playCount).reduce(
-    (a, b) => a + b,
-    0
-  )}
-</p>
-
-
-<h2>🔥 On Repeat</h2>
-
-<div className="song-list">
-  {topSongs.map(song => (
-    <div
-      key={song.id}
-      className="song-card"
-      onClick={() => selectSong(song)}
-    >
-      <img
-        src={song.cover}
-        alt={song.title}
-        className="cover"
-      />
-
-      <h3>{song.title}</h3>
-      <p>{song.artist}</p>
-    </div>
-  ))}
-</div>
-
-<h2>✨ Recommended For You</h2>
-
-<div className="song-list">
-  {recommendedSongs.map(song => (
-    <div
-      key={song.id}
-      className="song-card"
-      onClick={() => selectSong(song)}
-    >
-      <img
-        src={song.cover}
-        alt={song.title}
-        className="cover"
-      />
-
-      <h3>{song.title}</h3>
-      <p>{song.artist}</p>
-    </div>
-  ))}
-</div>
-
-<h2>➕ Add Song</h2>
-
-<input
-  placeholder="Title"
-  value={newSongTitle}
-  onChange={(e) =>
-    setNewSongTitle(e.target.value)
-  }
-/>
-
-<input
-  placeholder="Artist"
-  value={newSongArtist}
-  onChange={(e) =>
-    setNewSongArtist(e.target.value)
-  }
-/>
-
-<input
-  placeholder="Cover URL"
-  value={newSongCover}
-  onChange={(e) =>
-    setNewSongCover(e.target.value)
-  }
-/>
-
-<input
-  placeholder="Audio URL"
-  value={newSongAudio}
-  onChange={(e) =>
-    setNewSongAudio(e.target.value)
-  }
-/>
-
-<button onClick={addSong}>
-  Add Song
-</button>
-
-        <br />
-        <br />
-
-       <audio
-  ref={audioRef}
-  controls
-  src={currentSong.audio}
-  onEnded={nextSong}
-  onTimeUpdate={() => {
-    setProgress(
-      ((audioRef.current?.currentTime || 0) /
-        (audioRef.current?.duration || 1)) *
-        100
-    );
-  }}
-/>
-
-<p>Favorites: {favorites.length}</p>
-
-<p>Recently Played: {recentSongs.length}</p>
-
-<p>Total Songs: {songs.length}</p>
-
-<p>Playlists: {playlists.length}</p>
-
-<p>
-  Most Played:{" "}
-  {mostPlayedSong
-    ? mostPlayedSong.title
-    : "None"}
-</p>
-
-<div className="player">
-  🎵{" "}
-  {playing
-    ? `${currentSong.title} - ${currentSong.artist}`
-    : "Paused"}
-
-  {playing && (
-    <div className="visualizer">
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  )}
-</div>
-
-<h2>🎧 AI DJ</h2>
-
-<div className="dj-box">
-  {djMessage}
-</div>
-
-</div> {/* main */}
-</div> {/* app */}
-</>
-);
+      {/* ── PLAYER BAR ── */}
+      <div className="player" style={{ left: sidebarOpen ? "300px" : "112px" }}>
+        <span>{playing ? `🎵 ${currentSong.title} — ${currentSong.artist}` : "⏸ Paused"}</span>
+        {playing && (
+          <div className="visualizer">
+            <span /><span /><span /><span />
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
 
 export default App;

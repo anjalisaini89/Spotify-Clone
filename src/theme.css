@@ -1,0 +1,49 @@
+/* ============================================
+   VIBELY THEME TOKENS
+   Dark = Moonlit Sakura | Light = Blossom Daybreak
+   ============================================ */
+
+:root,
+[data-theme="dark"] {
+  --bg-1: #0f0518;
+  --bg-2: #1f1030;
+  --bg-3: #2c163f;
+  --bg-4: #12071f;
+
+  --text: #f6f1fb;
+  --text-dim: #cbbdd9;
+  --text-faint: #8b7a9c;
+
+  --accent-1: #ffb7d5;   /* blossom pink */
+  --accent-2: #c084fc;   /* violet */
+  --accent-3: #a855f7;   /* deep violet */
+
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-strong: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: 22px;
+
+  --shadow-glow: 0 0 30px rgba(192, 132, 252, 0.35);
+  --shadow-soft: 0 20px 60px rgba(0,0,0,0.45);
+
+  --sidebar-w: 260px;
+  --sidebar-w-collapsed: 88px;
+  --player-h: 96px;
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme="light"] {
+  --bg-1: #1a0a2e;
+  --bg-2: #2d1048;
+  --bg-3: #3d1560;
+  --bg-4: #150820;
+  --text: #f0e6ff;
+  --text-dim: #c9a8e8;
+  --text-faint: #9370b8;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+}
