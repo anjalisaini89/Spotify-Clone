@@ -1,3 +1,7 @@
+import {
+  FaHome, FaSearch, FaHeart, FaMusic,
+  FaList, FaMoon, FaSun, FaChevronLeft, FaChevronRight
+} from "react-icons/fa";
 import "./App.css";
 import { useRef, useState, useEffect } from "react";
 import Login from "./components/Login";
@@ -136,9 +140,7 @@ function App() {
   };
 
   const deletePlaylist = (id) => setPlaylists(playlists.filter((p) => p.id !== id));
-
-  const addToQueue = (song) =>
-    setQueue((prev) => prev.some((s) => s.id === song.id) ? prev : [...prev, song]);
+  const addToQueue = (song) => setQueue((prev) => prev.some((s) => s.id === song.id) ? prev : [...prev, song]);
 
   const addToPlaylist = (playlistId, song) => {
     setPlaylists(playlists.map((p) =>
@@ -172,6 +174,13 @@ function App() {
 
   const mostPlayedSong = topSongs[0] || null;
 
+  const formatTime = (secs) => {
+    if (!secs || isNaN(secs)) return "0:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   if (!currentSong) return <h1 style={{ color: "white", padding: 40 }}>Loading...</h1>;
 
   return (
@@ -187,7 +196,6 @@ function App() {
       <img src="/tree.png" className="tree-decoration" alt="" />
       <div className="petals">{[...Array(15)].map((_, i) => <span key={i} />)}</div>
 
-      {/* Audio */}
       <audio
         ref={audioRef}
         src={currentSong.audio}
@@ -204,23 +212,33 @@ function App() {
         {/* ── SIDEBAR ── */}
         <div className={`sidebar ${sidebarOpen ? "sidebar-open" : "sidebar-collapsed"}`}>
           <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? "◀" : "▶"}
+            {sidebarOpen ? <FaChevronLeft /> : <FaChevronRight />}
           </button>
 
-          <h2 className="sidebar-logo">{sidebarOpen ? "Vibely" : "V"}</h2>
+          <div className="sidebar-logo">
+            🎧 {sidebarOpen && "Vibely"}
+          </div>
 
           {sidebarOpen && <Login />}
 
-          <div className="menu-item">🏠 {sidebarOpen && "Home"}</div>
-          <div className="menu-item">🔍 {sidebarOpen && "Search"}</div>
-          <div className="menu-item">📚 {sidebarOpen && "Library"}</div>
-          <div className="menu-item">❤️ {sidebarOpen && "Favorites"}</div>
-          <div className="menu-item">📂 {sidebarOpen && "Playlists"}</div>
-          <div
-            className="menu-item"
-            onClick={() => setTheme((t) => t === "dark" ? "light" : "dark")}
-          >
-            {theme === "dark" ? "🌸" : "🌙"} {sidebarOpen && (theme === "dark" ? "Light Mode" : "Dark Mode")}
+          <div className="menu-item">
+            <FaHome /> {sidebarOpen && <span>Home</span>}
+          </div>
+          <div className="menu-item">
+            <FaSearch /> {sidebarOpen && <span>Search</span>}
+          </div>
+          <div className="menu-item">
+            <FaMusic /> {sidebarOpen && <span>Library</span>}
+          </div>
+          <div className="menu-item">
+            <FaHeart /> {sidebarOpen && <span>Favorites</span>}
+          </div>
+          <div className="menu-item">
+            <FaList /> {sidebarOpen && <span>Playlists</span>}
+          </div>
+          <div className="menu-item" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            {theme === "dark" ? <FaSun /> : <FaMoon />}
+            {sidebarOpen && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
           </div>
         </div>
 
@@ -251,115 +269,86 @@ function App() {
           </div>
 
           <br />
-
           <button onClick={() => setShuffle(!shuffle)}>
             {shuffle ? "🔀 Shuffle ON" : "🔀 Shuffle OFF"}
           </button>
-
           <br /><br />
 
-          {/* ── NOW PLAYING ── */}
-<div className="np-island">
-  {/* Blurred bg art */}
-  <div
-    className="np-bg-art"
-    style={{ backgroundImage: `url(${currentSong.cover})` }}
-  />
+          {/* ── NOW PLAYING ISLAND ── */}
+          <div className="np-island">
+            <div className="np-bg-art" style={{ backgroundImage: `url(${currentSong.cover})` }} />
+            <div className="np-orb np-orb-1" />
+            <div className="np-orb np-orb-2" />
 
-  {/* Floating glow orbs */}
-  <div className="np-orb np-orb-1" />
-  <div className="np-orb np-orb-2" />
+            <div className="np-content">
+              <div className="np-cover-ring">
+                <div className="np-cover-ring-inner">
+                  <img
+                    src={currentSong.cover}
+                    alt={currentSong.title}
+                    className={`np-cover ${playing ? "np-cover-playing" : ""}`}
+                  />
+                </div>
+              </div>
 
-  {/* Content */}
-  <div className="np-content">
+              <div className="np-petals">
+                <span>🌸</span><span>🌸</span><span>🌸</span>
+              </div>
 
-    {/* Album art */}
-    <div className="np-cover-ring">
-      <div className="np-cover-ring-inner">
-        <img
-          src={currentSong.cover}
-          alt={currentSong.title}
-          className={`np-cover ${playing ? "np-cover-playing" : ""}`}
-        />
-      </div>
-    </div>
+              <div className="np-info">
+                <p className="np-now-label">✦ NOW PLAYING ✦</p>
+                <h2 className="np-title">{currentSong.title}</h2>
+                <p className="np-artist">{currentSong.artist}</p>
+              </div>
 
-    {/* Sakura petals floating inside card */}
-    <div className="np-petals">
-      <span>🌸</span><span>🌸</span><span>🌸</span>
-    </div>
+              <div className="np-progress-wrap">
+                <span className="np-time">{formatTime(audioRef.current?.currentTime)}</span>
+                <input
+                  className="np-progress"
+                  type="range" min="0" max="100" value={progress}
+                  onChange={(e) => {
+                    setProgress(e.target.value);
+                    if (audioRef.current)
+                      audioRef.current.currentTime = (e.target.value / 100) * audioRef.current.duration;
+                  }}
+                />
+                <span className="np-time">{formatTime(audioRef.current?.duration)}</span>
+              </div>
 
-    {/* Song info */}
-    <div className="np-info">
-      <p className="np-now-label">✦ NOW PLAYING ✦</p>
-      <h2 className="np-title">{currentSong.title}</h2>
-      <p className="np-artist">{currentSong.artist}</p>
-    </div>
+              <div className="np-controls">
+                <button className="np-btn-sm" onClick={() => setShuffle(!shuffle)}>
+                  {shuffle ? "🔀" : "🔁"}
+                </button>
+                <button className="np-btn" onClick={prevSong}>⏮</button>
+                <button className="np-btn-play" onClick={playing ? pauseSong : playSong}>
+                  {playing ? "⏸" : "▶"}
+                </button>
+                <button className="np-btn" onClick={nextSong}>⏭</button>
+                <button className="np-btn-sm" onClick={() => toggleFavorite(currentSong)}>
+                  {favorites.some((f) => f.id === currentSong.id) ? "❤️" : "🤍"}
+                </button>
+              </div>
 
-    {/* Progress */}
-    <div className="np-progress-wrap">
-      <span className="np-time">
-        {audioRef.current
-          ? new Date(audioRef.current.currentTime * 1000).toISOString().substr(14, 5)
-          : "0:00"}
-      </span>
-      <input
-        className="np-progress"
-        type="range" min="0" max="100" value={progress}
-        onChange={(e) => {
-          setProgress(e.target.value);
-          if (audioRef.current)
-            audioRef.current.currentTime = (e.target.value / 100) * audioRef.current.duration;
-        }}
-      />
-      <span className="np-time">
-        {audioRef.current?.duration
-          ? new Date(audioRef.current.duration * 1000).toISOString().substr(14, 5)
-          : "0:00"}
-      </span>
-    </div>
+              <div className="np-volume">
+                <span>🔈</span>
+                <input
+                  className="np-vol-slider"
+                  type="range" min="0" max="1" step="0.05" value={volume}
+                  onChange={(e) => {
+                    setVolume(Number(e.target.value));
+                    if (audioRef.current) audioRef.current.volume = Number(e.target.value);
+                  }}
+                />
+                <span>🔊</span>
+              </div>
 
-    {/* Controls */}
-    <div className="np-controls">
-      <button className="np-btn-sm" onClick={() => setShuffle(!shuffle)}>
-        {shuffle ? "🔀" : "🔁"}
-      </button>
-      <button className="np-btn" onClick={prevSong}>⏮</button>
-      <button className="np-btn-play" onClick={playing ? pauseSong : playSong}>
-        {playing ? "⏸" : "▶"}
-      </button>
-      <button className="np-btn" onClick={nextSong}>⏭</button>
-      <button
-        className="np-btn-sm"
-        onClick={() => toggleFavorite(currentSong)}
-      >
-        {favorites.some((f) => f.id === currentSong.id) ? "❤️" : "🤍"}
-      </button>
-    </div>
-
-    {/* Volume */}
-    <div className="np-volume">
-      <span>🔈</span>
-      <input
-        className="np-vol-slider"
-        type="range" min="0" max="1" step="0.05" value={volume}
-        onChange={(e) => {
-          setVolume(Number(e.target.value));
-          if (audioRef.current) audioRef.current.volume = Number(e.target.value);
-        }}
-      />
-      <span>🔊</span>
-    </div>
-
-    {/* Visualizer bars when playing */}
-    {playing && (
-      <div className="np-visualizer">
-        <span /><span /><span /><span /><span /><span /><span />
-      </div>
-    )}
-
-  </div>
-</div>
+              {playing && (
+                <div className="np-visualizer">
+                  <span /><span /><span /><span /><span /><span /><span />
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Recently Played */}
           {recentSongs.length > 0 && (
@@ -490,7 +479,6 @@ function App() {
             <button onClick={addSong}>Add Song</button>
           </div>
 
-          {/* AI DJ */}
           <br />
           <h2>🎧 AI DJ</h2>
           <div className="dj-box">{djMessage}</div>
@@ -500,7 +488,7 @@ function App() {
       </div>
 
       {/* ── PLAYER BAR ── */}
-      <div className="player" style={{ left: sidebarOpen ? "300px" : "112px" }}>
+      <div className={`player ${sidebarOpen ? "player-open" : "player-collapse"}`}>
         <span>{playing ? `🎵 ${currentSong.title} — ${currentSong.artist}` : "⏸ Paused"}</span>
         {playing && (
           <div className="visualizer">
