@@ -255,7 +255,39 @@ function App() {
           </div>
 
           <br />
+        {/* HERO SECTION */}
+<div className="hero-section">
+  <div className="hero-content">
+    <p className="hero-tag">✨ Welcome Back</p>
 
+    <h1 className="hero-title">
+      Enjoy Your <span>Music Journey</span>
+    </h1>
+
+    <p className="hero-text">
+      Discover new songs, enjoy your favorite playlists,
+      and let Vibely DJ create the perfect vibe for every moment.
+    </p>
+
+    <div className="hero-buttons">
+      <button className="hero-btn primary">
+        ▶ Play Now
+      </button>
+
+      <button className="hero-btn secondary">
+        ❤️ Favorites
+      </button>
+    </div>
+  </div>
+
+  <div className="hero-image">
+    <img
+      src={currentSong.cover}
+      alt={currentSong.title}
+      className={playing ? "hero-cover spinning" : "hero-cover"}
+    />
+  </div>
+</div>
           {/* Search */}
           <div className="search-container">
             <span>🔍</span>
@@ -490,11 +522,15 @@ function App() {
       {/* ── PLAYER BAR ── */}
       <div className={`player ${sidebarOpen ? "player-open" : "player-collapse"}`}>
         <span>{playing ? `🎵 ${currentSong.title} — ${currentSong.artist}` : "⏸ Paused"}</span>
-        {playing && (
-          <div className="visualizer">
-            <span /><span /><span /><span />
-          </div>
-        )}
+        <div className={`visualizer ${playing ? "playing-bars" : ""}`}>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
       </div>
     </>
   );
