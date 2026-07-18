@@ -1294,3 +1294,14 @@ font-size:42px;
         0 0 10px #ff8fc7,
         0 0 25px #c084fc;
 }
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Poppins:wght@400;500;600&display=swap');
+.hero-title{
+    font-family:"Cinzel", serif;
+}
+
+.hero-text,
+.hero-tag,
+button{
+    font-family:"Poppins", sans-serif;
+}
