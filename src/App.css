@@ -516,14 +516,18 @@ left:90px;
 }
 
 /* DECORATIONS */
-.moon{
-    position: fixed;
-    top: 40px;
-    right: -40px;      /* move outside */
-    width: 180px;
-    height: 180px;
-    z-index: -1;       /* behind UI */
-    pointer-events: none;
+.moon {
+  position: fixed;
+  top: 40px;
+  right: 120px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffdf5 0%, #fff7d1 60%, #ffe9a8 100%);
+  box-shadow: 0 0 50px rgba(255,245,214,.8), 0 0 100px rgba(255,245,214,.5), 0 0 180px rgba(255,245,214,.3);
+  animation: moonGlow 5s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .moon::after {
