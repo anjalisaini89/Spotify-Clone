@@ -221,6 +221,11 @@ function App() {
 
           {sidebarOpen && <Login />}
 
+          <div className="menu-item active">
+    <FaHome />
+    <span>Home</span>
+</div>
+
           <div className="menu-item">
             <FaHome /> {sidebarOpen && <span>Home</span>}
           </div>

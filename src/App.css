@@ -1346,3 +1346,17 @@ button{
 .menu-item:hover svg {
     color: #ffb7d5 !important;
 }
+.stats-grid{
+    margin-top:20px;
+    margin-bottom:35px;
+}
+
+.menu-item.active{
+    background:rgba(255,183,213,.12);
+    border:1px solid rgba(255,183,213,.3);
+    color:#ffb7d5;
+}
+
+.menu-item.active svg{
+    color:#ffb7d5;
+}
