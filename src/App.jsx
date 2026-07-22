@@ -5,6 +5,7 @@ import {
 import "./App.css";
 import { useRef, useState, useEffect } from "react";
 import Login from "./components/Login";
+import MiniPlayer from "./components/MiniPlayer.jsx";
 
 function App() {
   const audioRef = useRef(null);
@@ -525,18 +526,21 @@ function App() {
       </div>
 
       {/* ── PLAYER BAR ── */}
-      <div className={`player ${sidebarOpen ? "player-open" : "player-collapse"}`}>
-        <span>{playing ? `🎵 ${currentSong.title} — ${currentSong.artist}` : "⏸ Paused"}</span>
-        <div className={`visualizer ${playing ? "playing-bars" : ""}`}>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-</div>
-      </div>
+      <MiniPlayer
+    currentSong={currentSong}
+    playing={playing}
+    playSong={playSong}
+    pauseSong={pauseSong}
+    prevSong={prevSong}
+    nextSong={nextSong}
+    progress={progress}
+    setProgress={setProgress}
+    audioRef={audioRef}
+    volume={volume}
+    setVolume={setVolume}
+    favorites={favorites}
+    toggleFavorite={toggleFavorite}
+/>
     </>
   );
 }
