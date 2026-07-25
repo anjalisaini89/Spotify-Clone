@@ -987,3 +987,23 @@ listening habits.
 </div>
 
 </div>
+<MiniPlayer
+  currentSong={currentSong}
+  playing={playing}
+  playSong={playSong}
+  pauseSong={pauseSong}
+  prevSong={prevSong}
+  nextSong={nextSong}
+  progress={progress}
+  setProgress={setProgress}
+  audioRef={audioRef}
+  volume={volume}
+  setVolume={setVolume}
+  favorites={favorites}
+  toggleFavorite={toggleFavorite}
+/>
+
+</>
+);
+
+export default App;
