@@ -33,7 +33,7 @@ function App() {
   const [activePage, setActivePage] = useState("home");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [activePage, setActivePage] = useState("home");
-  
+
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
@@ -244,64 +244,44 @@ function App() {
     {/* SIDEBAR */}
 
     <div
-      className={`sidebar ${
-        sidebarOpen ? "sidebar-open" : "sidebar-collapsed"
-      }`}
-    >
-      <button
-        className="sidebar-toggle"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        {sidebarOpen ? <FaChevronLeft /> : <FaChevronRight />}
-      </button>
+  className={`menu-item ${activePage === "home" ? "active" : ""}`}
+  onClick={() => setActivePage("home")}
+>
+  <FaHome />
+  {sidebarOpen && <span>Home</span>}
+</div>
 
-      <div className="sidebar-logo">
-        🎧 {sidebarOpen && "Vibely"}
-      </div>
+<div
+  className={`menu-item ${activePage === "search" ? "active" : ""}`}
+  onClick={() => setActivePage("search")}
+>
+  <FaSearch />
+  {sidebarOpen && <span>Search</span>}
+</div>
 
-      {sidebarOpen && <Login />}
+<div
+  className={`menu-item ${activePage === "library" ? "active" : ""}`}
+  onClick={() => setActivePage("library")}
+>
+  <FaMusic />
+  {sidebarOpen && <span>Library</span>}
+</div>
 
-      <div className="menu-item active">
-        <FaHome />
-        {sidebarOpen && <span>Home</span>}
-      </div>
+<div
+  className={`menu-item ${activePage === "favorites" ? "active" : ""}`}
+  onClick={() => setActivePage("favorites")}
+>
+  <FaHeart />
+  {sidebarOpen && <span>Favorites</span>}
+</div>
 
-      <div className="menu-item">
-        <FaSearch />
-        {sidebarOpen && <span>Search</span>}
-      </div>
-
-      <div className="menu-item">
-        <FaMusic />
-        {sidebarOpen && <span>Library</span>}
-      </div>
-
-      <div className="menu-item">
-        <FaHeart />
-        {sidebarOpen && <span>Favorites</span>}
-      </div>
-
-      <div className="menu-item">
-        <FaList />
-        {sidebarOpen && <span>Playlists</span>}
-      </div>
-
-      <div
-        className="menu-item"
-        onClick={() =>
-          setTheme(theme === "dark" ? "light" : "dark")
-        }
-      >
-        {theme === "dark" ? <FaSun /> : <FaMoon />}
-        {sidebarOpen && (
-          <span>
-            {theme === "dark"
-              ? "Light Mode"
-              : "Dark Mode"}
-          </span>
-        )}
-      </div>
-    </div>
+<div
+  className={`menu-item ${activePage === "playlists" ? "active" : ""}`}
+  onClick={() => setActivePage("playlists")}
+>
+  <FaList />
+  {sidebarOpen && <span>Playlists</span>}
+</div>
 
     {/* MAIN */}
 
