@@ -286,7 +286,106 @@ function App() {
     {/* MAIN */}
 
     <div className="main">
+      {activePage === "home" && (
+  <>
+    {/* Home page content goes here */}
+  </>
+)}
 
+{activePage === "search" && (
+  <>
+    <h1>🔍 Search</h1>
+
+    <div className="search-container">
+      <span>🔍</span>
+
+      <input
+        className="search-bar"
+        type="text"
+        placeholder="Search songs..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+    </div>
+
+    <div className="song-list">
+
+      {filteredSongs.map((song) => (
+        <div
+          key={song.id}
+          className="song-card"
+          onClick={() => selectSong(song)}
+        >
+          <img src={song.cover} className="cover" alt="" />
+          <h3>{song.title}</h3>
+          <p>{song.artist}</p>
+        </div>
+      ))}
+
+    </div>
+
+  </>
+)}
+
+{activePage === "library" && (
+  <>
+    <h1>🎵 Your Library</h1>
+
+    <div className="song-list">
+
+      {songs.map((song) => (
+        <div
+          key={song.id}
+          className="song-card"
+          onClick={() => selectSong(song)}
+        >
+          <img src={song.cover} className="cover" alt="" />
+          <h3>{song.title}</h3>
+          <p>{song.artist}</p>
+        </div>
+      ))}
+
+    </div>
+
+  </>
+)}
+
+{activePage === "favorites" && (
+  <>
+    <h1>❤️ Favorite Songs</h1>
+
+    <div className="song-list">
+
+      {favorites.map((song) => (
+        <div
+          key={song.id}
+          className="song-card"
+          onClick={() => selectSong(song)}
+        >
+          <img src={song.cover} className="cover" alt="" />
+          <h3>{song.title}</h3>
+          <p>{song.artist}</p>
+        </div>
+      ))}
+
+    </div>
+
+  </>
+)}
+
+{activePage === "playlists" && (
+  <>
+    <h1>📂 Your Playlists</h1>
+
+    {playlists.map((playlist) => (
+      <div key={playlist.id} className="playlist-card">
+        <h3>{playlist.name}</h3>
+        <p>{playlist.songs.length} songs</p>
+      </div>
+    ))}
+  </>
+)}
       {/* Dashboard */}
 
       <div className="stats-grid">
