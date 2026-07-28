@@ -1,6 +1,4 @@
-import "./MiniPlayer.css";
-
-export default function MiniPlayer({
+function MiniPlayer({
   currentSong,
   playing,
   playSong,
@@ -8,125 +6,71 @@ export default function MiniPlayer({
   prevSong,
   nextSong,
   progress,
-  setProgress,
   audioRef,
   volume,
   setVolume,
-  favorites,
-  toggleFavorite,
 }) {
-
-  const formatTime = (time) => {
-    if (!time || isNaN(time)) return "0:00";
-    const min = Math.floor(time / 60);
-    const sec = Math.floor(time % 60);
-    return `${min}:${sec.toString().padStart(2,"0")}`;
-  };
-
   return (
     <div className="mini-player">
 
-      {/* Left */}
+      <img
+        src={currentSong.cover}
+        alt={currentSong.title}
+        className="mini-cover"
+      />
 
-      <div className="mini-left">
+      <div className="mini-info">
 
-        <img
-          src={currentSong.cover}
-          alt=""
-          className="mini-cover"
-        />
+        <h4>{currentSong.title}</h4>
 
-        <div>
-
-          <h4>{currentSong.title}</h4>
-
-          <p>{currentSong.artist}</p>
-
-        </div>
+        <p>{currentSong.artist}</p>
 
       </div>
 
-      {/* Center */}
+      <button onClick={prevSong}>
+        ⏮
+      </button>
 
-      <div className="mini-center">
+      <button
+        onClick={
+          playing
+            ? pauseSong
+            : playSong
+        }
+      >
+        {playing ? "⏸" : "▶"}
+      </button>
 
-        <div className="mini-buttons">
+      <button onClick={nextSong}>
+        ⏭
+      </button>
 
-          <button onClick={prevSong}>⏮</button>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={progress}
+        readOnly
+      />
 
-          <button onClick={playing ? pauseSong : playSong}>
-            {playing ? "⏸" : "▶"}
-          </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value={volume}
+        onChange={(e) => {
+          setVolume(e.target.value);
 
-          <button onClick={nextSong}>⏭</button>
-
-        </div>
-
-        <div className="mini-progress">
-
-          <span>
-            {formatTime(audioRef.current?.currentTime)}
-          </span>
-
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={progress}
-            onChange={(e)=>{
-              setProgress(e.target.value);
-
-              if(audioRef.current){
-
-                audioRef.current.currentTime =
-                (e.target.value/100)*
-                audioRef.current.duration;
-
-              }
-
-            }}
-          />
-
-          <span>
-            {formatTime(audioRef.current?.duration)}
-          </span>
-
-        </div>
-
-      </div>
-
-      {/* Right */}
-
-      <div className="mini-right">
-
-        <button
-          onClick={()=>toggleFavorite(currentSong)}
-        >
-          {favorites.some(f=>f.id===currentSong.id)
-            ? "❤️"
-            : "🤍"}
-        </button>
-
-        <span>🔊</span>
-
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step=".05"
-          value={volume}
-          onChange={(e)=>{
-
-            setVolume(Number(e.target.value));
-
+          if (audioRef.current) {
             audioRef.current.volume =
-            Number(e.target.value);
-
-          }}
-        />
-
-      </div>
+              e.target.value;
+          }
+        }}
+      />
 
     </div>
   );
 }
+
+export default MiniPlayer;
