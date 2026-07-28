@@ -32,7 +32,6 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState("home");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [activePage, setActivePage] = useState("home");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
