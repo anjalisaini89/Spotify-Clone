@@ -1360,3 +1360,56 @@ button{
 .menu-item.active svg{
     color:#ffb7d5;
 }
+.dj-box{
+    margin-top:40px;
+    padding:25px;
+    border-radius:20px;
+    background:rgba(255,255,255,.06);
+    backdrop-filter:blur(18px);
+    color:white;
+}
+
+.dj-message{
+    font-size:18px;
+    margin:20px 0;
+}
+
+.dj-card{
+    display:flex;
+    gap:20px;
+    align-items:center;
+    margin-top:20px;
+}
+
+.dj-cover{
+    width:120px;
+    height:120px;
+    border-radius:18px;
+    object-fit:cover;
+}
+
+.dj-info h3{
+    margin:0;
+    font-size:22px;
+}
+
+.dj-info p{
+    color:#ccc;
+}
+
+.dj-play,
+.dj-refresh{
+    margin-top:15px;
+    padding:12px 22px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:bold;
+    background:#1db954;
+    color:white;
+}
+
+.dj-play:hover,
+.dj-refresh:hover{
+    transform:scale(1.05);
+}
