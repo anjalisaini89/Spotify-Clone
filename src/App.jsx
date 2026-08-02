@@ -406,14 +406,12 @@ function App() {
               />
 
               <AIDJ
-                <AIDJ
     recommendedSongs={recommendedSongs}
     favorites={favorites}
     recentSongs={recentSongs}
     playCount={playCount}
     selectSong={selectSong}
 />
-              />
             </>
           )}
 
