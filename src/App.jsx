@@ -406,8 +406,13 @@ function App() {
               />
 
               <AIDJ
-                djMessage={djMessage}
-                recommendedSongs={recommendedSongs}
+                <AIDJ
+    recommendedSongs={recommendedSongs}
+    favorites={favorites}
+    recentSongs={recentSongs}
+    playCount={playCount}
+    selectSong={selectSong}
+/>
               />
             </>
           )}
