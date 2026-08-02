@@ -272,4 +272,200 @@ function App() {
         100
     );
   };
-  
+    if (!currentSong)
+    return <h1 style={{ color: "white", padding: 40 }}>Loading...</h1>;
+
+  return (
+    <>
+      {/* Background Effects */}
+      <div className="moon"></div>
+
+      <div className="stars">
+        {[...Array(40)].map((_, i) => (
+          <span
+            key={i}
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="fireflies">
+        {[...Array(15)].map((_, i) => (
+          <span key={i}></span>
+        ))}
+      </div>
+
+      <div className="petals">
+        {[...Array(20)].map((_, i) => (
+          <span key={i}></span>
+        ))}
+      </div>
+
+      <audio
+        ref={audioRef}
+        src={currentSong.audio}
+        onEnded={nextSong}
+        onTimeUpdate={handleProgress}
+      />
+
+      <div className="app">
+
+        <Sidebar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          activePage={activePage}
+          setActivePage={setActivePage}
+          theme={theme}
+          setTheme={setTheme}
+        />
+
+        <div className="main">
+
+          <Login />
+
+          {activePage === "home" && (
+            <>
+              <Dashboard
+                totalListeningTime={totalListeningTime}
+                favorites={favorites}
+                playlists={playlists}
+                playCount={playCount}
+                mostPlayedSong={mostPlayedSong}
+              />
+
+              <Hero
+                currentSong={currentSong}
+                playing={playing}
+                playSong={playSong}
+              />
+
+              <Search
+                search={search}
+                setSearch={setSearch}
+              />
+
+              <CategoryBar
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+              />
+
+              <SongList
+                title="⭐ Featured Albums"
+                songs={songs.slice(0, 6)}
+                selectSong={selectSong}
+              />
+
+              <SongList
+                title="🔥 Trending Now"
+                songs={topSongs}
+                selectSong={selectSong}
+              />
+
+              <SongList
+                title="🕒 Recently Played"
+                songs={recentSongs}
+                selectSong={selectSong}
+              />
+
+              <SongList
+                title="❤️ Favorites"
+                songs={favorites}
+                selectSong={selectSong}
+              />
+
+              <SongList
+                title="🎵 All Songs"
+                songs={filteredSongs}
+                selectSong={selectSong}
+                favorites={favorites}
+                toggleFavorite={toggleFavorite}
+                addToQueue={addToQueue}
+              />
+
+              <Playlist
+                playlists={playlists}
+                playlistName={playlistName}
+                setPlaylistName={setPlaylistName}
+                createPlaylist={createPlaylist}
+                deletePlaylist={deletePlaylist}
+              />
+
+              <UploadSong
+                newSongTitle={newSongTitle}
+                setNewSongTitle={setNewSongTitle}
+                newSongArtist={newSongArtist}
+                setNewSongArtist={setNewSongArtist}
+                newSongCover={newSongCover}
+                setNewSongCover={setNewSongCover}
+                newSongAudio={newSongAudio}
+                setNewSongAudio={setNewSongAudio}
+                addSong={addSong}
+              />
+
+              <AIDJ
+                djMessage={djMessage}
+                recommendedSongs={recommendedSongs}
+              />
+            </>
+          )}
+
+          {activePage === "search" && (
+            <SongList
+              title="🔍 Search Results"
+              songs={filteredSongs}
+              selectSong={selectSong}
+            />
+          )}
+
+          {activePage === "favorites" && (
+            <SongList
+              title="❤️ Favorite Songs"
+              songs={favorites}
+              selectSong={selectSong}
+            />
+          )}
+
+          {activePage === "library" && (
+            <SongList
+              title="🎵 Library"
+              songs={songs}
+              selectSong={selectSong}
+            />
+          )}
+
+          {activePage === "playlists" && (
+            <Playlist
+              playlists={playlists}
+              playlistName={playlistName}
+              setPlaylistName={setPlaylistName}
+              createPlaylist={createPlaylist}
+              deletePlaylist={deletePlaylist}
+            />
+          )}
+
+        </div>
+      </div>
+
+      <MiniPlayer
+        currentSong={currentSong}
+        playing={playing}
+        playSong={playSong}
+        pauseSong={pauseSong}
+        prevSong={prevSong}
+        nextSong={nextSong}
+        progress={progress}
+        setProgress={setProgress}
+        audioRef={audioRef}
+        volume={volume}
+        setVolume={setVolume}
+        favorites={favorites}
+        toggleFavorite={toggleFavorite}
+      />
+    </>
+  );
+}
+
+export default App;
