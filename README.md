@@ -1,222 +1,223 @@
 <div align="center">
 
-# 🌸 VIBELY
+# 🌙 Vibely
+
 ### *An AI-Powered Music Streaming Experience*
 
-<img src="https://readme-typing-svg.herokuapp.com?font=Poppins&size=28&duration=3500&pause=1000&color=C084FC&center=true&vCenter=true&width=700&lines=Spotify+Inspired+Music+Platform;AI+DJ+Recommendations;Beautiful+Anime+Aesthetic;Built+with+React+%2B+Vite" />
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Poppins&weight=700&size=30&pause=1000&color=C084FC&center=true&vCenter=true&width=800&lines=Spotify-Inspired+Music+Platform;AI+DJ+Recommendations;Real-Time+Listening+Experience;Built+with+React+%2B+Vite" />
+</p>
 
 <p align="center">
 
-<img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react"/>
-<img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite"/>
-<img src="https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=for-the-badge&logo=javascript"/>
-<img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3"/>
-<img src="https://img.shields.io/badge/Responsive-Yes-success?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white"/>
+<img src="https://img.shields.io/badge/Vite-8B5CF6?style=for-the-badge&logo=vite&logoColor=white"/>
+<img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
+<img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white"/>
 
 </p>
 
 ---
 
-### 🌙 *Where Music Meets Moonlight*
+## 🌸 Where Music Meets Moonlight
 
-<img src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" width="800"/>
+*A premium Spotify-inspired experience with immersive visuals, AI-powered recommendations, and elegant anime aesthetics.*
+
+> **🎧 Live Demo:** https://your-vercel-url.vercel.app
 
 </div>
 
 ---
 
-# ✨ Overview
+# ✨ Preview
 
-Vibely is a modern Spotify-inspired music streaming application featuring an immersive anime-inspired interface, intelligent music recommendations, playlist management, and a beautiful glassmorphism design.
+> Replace these with screenshots or GIFs from your own app.
 
-Unlike a traditional clone, Vibely focuses on creating an emotional music experience through animated visuals, interactive UI, and AI-powered recommendations.
+| Home | Music Player |
+|------|--------------|
+| ![](assets/home.png) | ![](assets/player.png) |
+
+| Playlist | AI DJ |
+|-----------|--------|
+| ![](assets/playlist.png) | ![](assets/aidj.png) |
 
 ---
 
 # 🌸 Features
 
-## 🎧 Music Player
+## 🎵 Music Experience
 
-- ▶️ Play / Pause
-- ⏭ Next / Previous
-- 🔀 Shuffle Mode
-- 🔁 Repeat
+- 🎧 Play, Pause, Next & Previous
+- 🔁 Repeat Mode
+- 🔀 Shuffle Playback
+- 🎚 Interactive Progress Bar
 - 🔊 Volume Control
-- 📈 Live Progress Bar
-- 🎼 Music Visualizer
-
----
-
-## ❤️ Personalization
-
-- Favorite Songs
-- Recently Played
-- Most Played Songs
-- Listening Statistics
-- Playlist Creation
-- Queue Management
+- ❤️ Favourite Songs
+- 📜 Recently Played
+- 📂 Playlist Management
 
 ---
 
 ## 🤖 AI DJ
 
-AI DJ recommends songs based on listening behavior and displays intelligent recommendations.
+- AI-powered song recommendations
+- Smart playlist suggestions
+- Personalized listening experience
 
 ---
 
-## 🌸 Beautiful UI
+## 🌙 Beautiful Interface
 
-- Glassmorphism
-- Floating Music Card
-- Rotating Album Art
-- Dynamic Glow Effects
-- Animated Cherry Blossoms
-- Fireflies
-- Moonlit Night Background
-- Animated Stars
-- Responsive Design
+- ✨ Glassmorphism UI
+- 🌸 Cherry Blossom Theme
+- 🌌 Moonlit Background
+- 🪲 Floating Fireflies
+- ⭐ Animated Stars
+- 💿 Hover Effects
+- 📱 Fully Responsive Design
 
 ---
 
-# 🖥️ Tech Stack
+# ⚙ Tech Stack
 
-| Frontend | Styling | Storage |
-|----------|----------|----------|
-| React | CSS3 | LocalStorage |
-| Vite | Glassmorphism | JSON |
-| JavaScript | Animations | Browser Storage |
+| Category | Technologies |
+|----------|--------------|
+| Frontend | React 19, Vite |
+| Styling | CSS3, Glassmorphism |
+| Routing | React Router |
+| Storage | Local JSON, LocalStorage |
+| Deployment | Vercel |
 
 ---
 
-# 📂 Folder Structure
+# 📂 Project Structure
 
+```text
+Spotify-Clone/
+│
+├── public/
+│   ├── songs/
+│   ├── covers/
+│   ├── songs.json
+│   └── tree.png
+│
+├── src/
+│   ├── components/
+│   ├── App.jsx
+│   ├── App.css
+│   ├── index.css
+│   ├── theme.css
+│   └── main.jsx
+│
+├── package.json
+└── README.md
 ```
-src/
- ├── components/
- ├── App.jsx
- ├── App.css
- ├── index.css
- ├── theme.css
- ├── main.jsx
-
-public/
- ├── songs.json
- ├── tree.png
- ├── covers/
- └── music/
-```
 
 ---
 
-# 📸 Preview
+# 🚀 Getting Started
 
-## Home
-
-<img src="YOUR_SCREENSHOT_LINK"/>
-
-## Now Playing
-
-<img src="YOUR_SCREENSHOT_LINK"/>
-
-## Playlist
-
-<img src="YOUR_SCREENSHOT_LINK"/>
-
----
-
-# 🚀 Installation
+Clone the repository
 
 ```bash
 git clone https://github.com/anjalisaini89/Spotify-Clone.git
+```
 
+Navigate into the project
+
+```bash
 cd Spotify-Clone
+```
 
+Install dependencies
+
+```bash
 npm install
+```
 
+Start the development server
+
+```bash
 npm run dev
+```
+
+Create a production build
+
+```bash
+npm run build
 ```
 
 ---
 
-# 🌐 Live Demo
+# 🎯 Current Progress
 
-🔗 https://your-vercel-link.vercel.app
+- ✅ Music Player
+- ✅ Playlist System
+- ✅ Dark Theme
+- ✅ Light Theme
+- ✅ AI DJ
+- ✅ Responsive UI
+- ✅ Premium Animations
+- 🚧 Real-time Listening Together
+- 🚧 Authentication
+- 🚧 Lyrics Support
+- 🚧 Music Analytics
 
 ---
 
-# 🎯 Roadmap
+# 🗺 Roadmap
 
-- [x] Music Player
-- [x] Playlist System
-- [x] Favorites
-- [x] Queue
-- [x] AI DJ
-- [x] Dark / Light Theme
-- [x] Listening Analytics
 - [ ] User Authentication
-- [ ] Friend Activity
-- [ ] Real-time Listening Party
+- [ ] Friend Activity Feed
+- [ ] Collaborative Listening
 - [ ] Voice Commands
-- [ ] Gemini AI Integration
-- [ ] Lyrics Support
+- [ ] AI Mood Detection
 - [ ] Spotify API Integration
+- [ ] Offline Downloads
+- [ ] Mobile App
 
 ---
 
-# 💡 Future Enhancements
+# 📊 Project Highlights
 
-- AI Mood Detection
-- Collaborative Playlists
-- Music Recommendation Engine
-- Social Feed
-- Live Chat
-- Mobile Application
-- Offline Downloads
+🎵 Spotify-inspired streaming platform
 
----
+🤖 AI-powered music recommendations
 
-# 📊 Project Stats
+🌸 Anime-inspired UI
 
-⭐ Modern Spotify Clone
+⚡ Responsive design
 
-🎧 AI DJ Recommendations
+💜 Glassmorphism interface
 
-🌸 Anime Inspired Design
-
-⚡ Built with React + Vite
-
-🎵 Responsive Music Player
-
-💜 Glassmorphism UI
+🚀 Built using modern React
 
 ---
 
 # 🤝 Contributing
 
-Contributions are welcome!
+Contributions, ideas, and improvements are welcome.
 
-Fork the repository
-
-Create a feature branch
-
-Commit your changes
-
-Open a Pull Request
+1. Fork the repository
+2. Create a new branch
+3. Commit your changes
+4. Open a Pull Request
 
 ---
 
-# ⭐ Support
+# 👩‍💻 Developer
 
-If you like this project, consider giving it a ⭐
+**Anjali Saini**
+
+- GitHub: https://github.com/anjalisaini89
+- LinkedIn: *(Add your LinkedIn URL here)*
 
 ---
 
 <div align="center">
 
-## 🌸 Built with passion by Anjali Saini
+### ⭐ If you enjoyed this project, consider giving it a star!
 
-*"Music feels different under the moonlight."*
-
-<img src="https://media.giphy.com/media/3o7TKsQ8UQ2N7Y2J7q/giphy.gif" width="450"/>
+*"Good music is heard. Great experiences are felt."* 🌙
 
 </div>
