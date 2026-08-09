@@ -37,7 +37,6 @@ function App() {
 
   const [favorites, setFavorites] = useState([]);
   const [recentSongs, setRecentSongs] = useState([]);
-
   const [playlists, setPlaylists] = useState([]);
   const [playlistName, setPlaylistName] = useState("");
 
@@ -111,21 +110,31 @@ function App() {
         console.error("Error loading songs:", error);
       }
 
+      /* Favorites */
+
       setFavorites(
         JSON.parse(localStorage.getItem("favorites")) || []
       );
+
+      /* Recently Played */
 
       setRecentSongs(
         JSON.parse(localStorage.getItem("recentSongs")) || []
       );
 
+      /* Playlists */
+
       setPlaylists(
         JSON.parse(localStorage.getItem("playlists")) || []
       );
 
+      /* Play Count */
+
       setPlayCount(
         JSON.parse(localStorage.getItem("playCount")) || {}
       );
+
+      /* Listening Time */
 
       setTotalListeningTime(
         Number(localStorage.getItem("listeningTime")) || 0
@@ -236,7 +245,11 @@ function App() {
           (previous[currentSong.id] || 0) + 1,
       }));
     } catch (error) {
-      console.error("Unable to play song:", error);
+      console.error(
+        "Unable to play song:",
+        error
+      );
+
       setPlaying(false);
     }
   };
@@ -265,6 +278,10 @@ function App() {
 
     setCurrentSong(song);
 
+    setProgress(0);
+
+    /* Recently Played */
+
     setRecentSongs((previous) =>
       [
         song,
@@ -274,7 +291,10 @@ function App() {
       ].slice(0, 10)
     );
 
-    setPlaying(false);
+    /*
+      Wait for React to update the audio source
+      before playing the new song.
+    */
 
     setTimeout(async () => {
       if (!audioRef.current) {
@@ -292,8 +312,10 @@ function App() {
           "Unable to play selected song:",
           error
         );
+
+        setPlaying(false);
       }
-    }, 100);
+    }, 150);
   };
 
   /* =========================
@@ -321,35 +343,40 @@ function App() {
 
     /* Shuffle */
 
-    if (shuffle && songs.length > 1) {
+    if (shuffle) {
       let randomSong;
 
-      do {
-        randomSong =
-          songs[
-            Math.floor(
-              Math.random() * songs.length
-            )
-          ];
-      } while (
-        randomSong.id === currentSong.id
-      );
+      if (songs.length === 1) {
+        randomSong = songs[0];
+      } else {
+        do {
+          randomSong =
+            songs[
+              Math.floor(
+                Math.random() * songs.length
+              )
+            ];
+        } while (
+          randomSong.id === currentSong.id
+        );
+      }
 
       selectSong(randomSong);
 
       return;
     }
 
-    /* Normal next */
+    /* Normal Next */
 
-    const currentIndex = songs.findIndex(
-      (song) => song.id === currentSong.id
+    const index = songs.findIndex(
+      (song) =>
+        song.id === currentSong.id
     );
 
     const nextIndex =
-      currentIndex === -1
+      index === -1
         ? 0
-        : (currentIndex + 1) % songs.length;
+        : (index + 1) % songs.length;
 
     selectSong(songs[nextIndex]);
   };
@@ -363,14 +390,15 @@ function App() {
       return;
     }
 
-    const currentIndex = songs.findIndex(
-      (song) => song.id === currentSong.id
+    const index = songs.findIndex(
+      (song) =>
+        song.id === currentSong.id
     );
 
     const previousIndex =
-      currentIndex === -1
+      index === -1
         ? 0
-        : (currentIndex - 1 + songs.length) %
+        : (index - 1 + songs.length) %
           songs.length;
 
     selectSong(songs[previousIndex]);
@@ -409,7 +437,8 @@ function App() {
 
     setQueue((previous) =>
       previous.some(
-        (item) => item.id === song.id
+        (item) =>
+          item.id === song.id
       )
         ? previous
         : [...previous, song]
@@ -421,16 +450,14 @@ function App() {
   ========================= */
 
   const createPlaylist = () => {
-    const name = playlistName.trim();
-
-    if (!name) {
+    if (!playlistName.trim()) {
       alert("Please enter a playlist name");
       return;
     }
 
     const newPlaylist = {
       id: Date.now(),
-      name,
+      name: playlistName.trim(),
       songs: [],
     };
 
@@ -456,7 +483,7 @@ function App() {
   };
 
   /* =========================
-     ADD SONG
+     ADD / UPLOAD SONG
   ========================= */
 
   const addSong = () => {
@@ -468,6 +495,11 @@ function App() {
         "Please enter song title and artist"
       );
 
+      return;
+    }
+
+    if (!newSongAudio.trim()) {
+      alert("Please enter an audio URL");
       return;
     }
 
@@ -513,6 +545,8 @@ function App() {
     setNewSongArtist("");
     setNewSongCover("");
     setNewSongAudio("");
+
+    alert("Song added successfully 🎵");
   };
 
   /* =========================
@@ -536,7 +570,8 @@ function App() {
 
       const matchesCategory =
         selectedCategory === "All" ||
-        song.category === selectedCategory;
+        song.category ===
+          selectedCategory;
 
       return (
         matchesSearch &&
@@ -558,7 +593,7 @@ function App() {
     .slice(0, 5);
 
   /* =========================
-     MOST PLAYED
+     MOST PLAYED SONG
   ========================= */
 
   const mostPlayedSong =
@@ -592,6 +627,34 @@ function App() {
     setProgress(
       (currentTime / duration) * 100
     );
+  };
+
+  /* =========================
+     SEEK SONG
+  ========================= */
+
+  const handleSeek = (value) => {
+    if (!audioRef.current) {
+      return;
+    }
+
+    const duration =
+      audioRef.current.duration;
+
+    if (
+      !duration ||
+      Number.isNaN(duration)
+    ) {
+      return;
+    }
+
+    const newTime =
+      (Number(value) / 100) * duration;
+
+    audioRef.current.currentTime =
+      newTime;
+
+    setProgress(Number(value));
   };
 
   /* =========================
@@ -660,27 +723,38 @@ function App() {
       <audio
         ref={audioRef}
         src={currentSong.audio}
-        volume={volume}
         onEnded={nextSong}
         onTimeUpdate={handleProgress}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
       />
 
       {/* =========================
-          APPLICATION
+          MAIN APP
       ========================= */}
 
       <div className="app">
 
+        {/* SIDEBAR */}
+
         <Sidebar
           sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
+          setSidebarOpen={
+            setSidebarOpen
+          }
           activePage={activePage}
-          setActivePage={setActivePage}
+          setActivePage={
+            setActivePage
+          }
           theme={theme}
           setTheme={setTheme}
         />
 
+        {/* MAIN CONTENT */}
+
         <div className="main">
+
+          {/* LOGIN */}
 
           <Login />
 
@@ -690,6 +764,8 @@ function App() {
 
           {activePage === "home" && (
             <>
+              {/* DASHBOARD */}
+
               <Dashboard
                 totalListeningTime={
                   totalListeningTime
@@ -702,12 +778,165 @@ function App() {
                 }
               />
 
+              {/* HERO */}
+
               <Hero
-                currentSong={currentSong}
+                currentSong={
+                  currentSong
+                }
                 playing={playing}
                 playSong={playSong}
               />
 
+              {/* SEARCH */}
+
+              <Search
+                search={search}
+                setSearch={setSearch}
+              />
+
+              {/* CATEGORY */}
+
+              <CategoryBar
+                selectedCategory={
+                  selectedCategory
+                }
+                setSelectedCategory={
+                  setSelectedCategory
+                }
+              />
+
+              {/* FEATURED */}
+
+              <SongList
+                title="⭐ Featured Albums"
+                songs={songs.slice(0, 6)}
+                selectSong={
+                  selectSong
+                }
+              />
+
+              {/* TRENDING */}
+
+              <SongList
+                title="🔥 Trending Now"
+                songs={topSongs}
+                selectSong={
+                  selectSong
+                }
+              />
+
+              {/* RECENTLY PLAYED */}
+
+              <SongList
+                title="🕒 Recently Played"
+                songs={recentSongs}
+                selectSong={
+                  selectSong
+                }
+              />
+
+              {/* FAVORITES */}
+
+              <SongList
+                title="❤️ Favorites"
+                songs={favorites}
+                selectSong={
+                  selectSong
+                }
+                favorites={
+                  favorites
+                }
+                toggleFavorite={
+                  toggleFavorite
+                }
+              />
+
+              {/* ALL SONGS */}
+
+              <SongList
+                title="🎵 All Songs"
+                songs={filteredSongs}
+                selectSong={
+                  selectSong
+                }
+                favorites={
+                  favorites
+                }
+                toggleFavorite={
+                  toggleFavorite
+                }
+                addToQueue={
+                  addToQueue
+                }
+              />
+
+              {/* PLAYLISTS */}
+
+              <Playlist
+                playlists={
+                  playlists
+                }
+                playlistName={
+                  playlistName
+                }
+                setPlaylistName={
+                  setPlaylistName
+                }
+                createPlaylist={
+                  createPlaylist
+                }
+                deletePlaylist={
+                  deletePlaylist
+                }
+              />
+
+              {/* UPLOAD */}
+
+              <UploadSong
+                newSongTitle={
+                  newSongTitle
+                }
+                setNewSongTitle={
+                  setNewSongTitle
+                }
+                newSongArtist={
+                  newSongArtist
+                }
+                setNewSongArtist={
+                  setNewSongArtist
+                }
+                newSongCover={
+                  newSongCover
+                }
+                setNewSongCover={
+                  setNewSongCover
+                }
+                newSongAudio={
+                  newSongAudio
+                }
+                setNewSongAudio={
+                  setNewSongAudio
+                }
+                addSong={addSong}
+              />
+
+              {/* =========================
+                  AI DJ
+                  
+                  COMPLETELY INDEPENDENT
+              ========================= */}
+
+              <AIDJ />
+            </>
+          )}
+
+          {/* =========================
+              SEARCH PAGE
+          ========================= */}
+
+          {activePage === "search" && (
+            <>
               <Search
                 search={search}
                 setSearch={setSearch}
@@ -723,146 +952,82 @@ function App() {
               />
 
               <SongList
-                title="⭐ Featured Albums"
-                songs={songs.slice(0, 6)}
-                selectSong={selectSong}
-              />
-
-              <SongList
-                title="🔥 Trending Now"
-                songs={topSongs}
-                selectSong={selectSong}
-              />
-
-              <SongList
-                title="🕒 Recently Played"
-                songs={recentSongs}
-                selectSong={selectSong}
-              />
-
-              <SongList
-                title="❤️ Favorites"
-                songs={favorites}
-                selectSong={selectSong}
-                favorites={favorites}
-                toggleFavorite={
-                  toggleFavorite
-                }
-              />
-
-              <SongList
-                title="🎵 All Songs"
+                title="🔍 Search Results"
                 songs={filteredSongs}
-                selectSong={selectSong}
-                favorites={favorites}
+                selectSong={
+                  selectSong
+                }
+                favorites={
+                  favorites
+                }
                 toggleFavorite={
                   toggleFavorite
                 }
-                addToQueue={addToQueue}
-              />
-
-              <Playlist
-                playlists={playlists}
-                playlistName={playlistName}
-                setPlaylistName={
-                  setPlaylistName
-                }
-                createPlaylist={
-                  createPlaylist
-                }
-                deletePlaylist={
-                  deletePlaylist
+                addToQueue={
+                  addToQueue
                 }
               />
-
-              <UploadSong
-                newSongTitle={newSongTitle}
-                setNewSongTitle={
-                  setNewSongTitle
-                }
-                newSongArtist={newSongArtist}
-                setNewSongArtist={
-                  setNewSongArtist
-                }
-                newSongCover={newSongCover}
-                setNewSongCover={
-                  setNewSongCover
-                }
-                newSongAudio={newSongAudio}
-                setNewSongAudio={
-                  setNewSongAudio
-                }
-                addSong={addSong}
-              />
-
-              {/* =========================
-                  AI DJ
-                  COMPLETELY INDEPENDENT
-              ========================= */}
-
-              <AIDJ />
             </>
           )}
 
           {/* =========================
-              SEARCH
-          ========================= */}
-
-          {activePage === "search" && (
-            <SongList
-              title="🔍 Search Results"
-              songs={filteredSongs}
-              selectSong={selectSong}
-              favorites={favorites}
-              toggleFavorite={
-                toggleFavorite
-              }
-              addToQueue={addToQueue}
-            />
-          )}
-
-          {/* =========================
-              FAVORITES
+              FAVORITES PAGE
           ========================= */}
 
           {activePage === "favorites" && (
             <SongList
               title="❤️ Favorite Songs"
               songs={favorites}
-              selectSong={selectSong}
-              favorites={favorites}
+              selectSong={
+                selectSong
+              }
+              favorites={
+                favorites
+              }
               toggleFavorite={
                 toggleFavorite
               }
-              addToQueue={addToQueue}
+              addToQueue={
+                addToQueue
+              }
             />
           )}
 
           {/* =========================
-              LIBRARY
+              LIBRARY PAGE
           ========================= */}
 
           {activePage === "library" && (
             <SongList
               title="🎵 Library"
               songs={songs}
-              selectSong={selectSong}
-              favorites={favorites}
+              selectSong={
+                selectSong
+              }
+              favorites={
+                favorites
+              }
               toggleFavorite={
                 toggleFavorite
               }
-              addToQueue={addToQueue}
+              addToQueue={
+                addToQueue
+              }
             />
           )}
 
           {/* =========================
-              PLAYLISTS
+              PLAYLISTS PAGE
           ========================= */}
 
           {activePage === "playlists" && (
             <Playlist
-              playlists={playlists}
-              playlistName={playlistName}
+              playlists={
+                playlists
+              }
+              playlistName={
+                playlistName
+              }
               setPlaylistName={
                 setPlaylistName
               }
@@ -874,7 +1039,6 @@ function App() {
               }
             />
           )}
-
         </div>
       </div>
 
@@ -883,18 +1047,26 @@ function App() {
       ========================= */}
 
       <MiniPlayer
-        currentSong={currentSong}
+        currentSong={
+          currentSong
+        }
         playing={playing}
         playSong={playSong}
         pauseSong={pauseSong}
         prevSong={prevSong}
         nextSong={nextSong}
         progress={progress}
-        setProgress={setProgress}
-        audioRef={audioRef}
+        setProgress={
+          handleSeek
+        }
+        audioRef={
+          audioRef
+        }
         volume={volume}
         setVolume={setVolume}
-        favorites={favorites}
+        favorites={
+          favorites
+        }
         toggleFavorite={
           toggleFavorite
         }
