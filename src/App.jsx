@@ -230,6 +230,64 @@ function App() {
     );
   };
 
+  const createPlaylist = () => {
+  if (!playlistName.trim()) {
+    alert("Please enter a playlist name");
+    return;
+  }
+
+  const newPlaylist = {
+    id: Date.now(),
+    name: playlistName.trim(),
+    songs: [],
+  };
+
+  setPlaylists((prev) => [...prev, newPlaylist]);
+  setPlaylistName("");
+};
+
+const deletePlaylist = (id) => {
+  setPlaylists((prev) =>
+    prev.filter((playlist) => playlist.id !== id)
+  );
+};
+
+const addSong = () => {
+  if (!newSongTitle.trim() || !newSongArtist.trim()) {
+    alert("Please enter song title and artist");
+    return;
+  }
+
+  const newSong = {
+    id: Date.now(),
+    title: newSongTitle.trim(),
+    artist: newSongArtist.trim(),
+    cover: newSongCover.trim() || "/covers/default.jpg",
+    audio: newSongAudio.trim(),
+    category: "Custom",
+  };
+
+  const existingCustomSongs =
+    JSON.parse(localStorage.getItem("customSongs")) || [];
+
+  const updatedCustomSongs = [
+    ...existingCustomSongs,
+    newSong,
+  ];
+
+  localStorage.setItem(
+    "customSongs",
+    JSON.stringify(updatedCustomSongs)
+  );
+
+  setSongs((prev) => [...prev, newSong]);
+
+  setNewSongTitle("");
+  setNewSongArtist("");
+  setNewSongCover("");
+  setNewSongAudio("");
+};
+
   const filteredSongs = songs.filter((song) => {
     const matchesSearch =
       song.title.toLowerCase().includes(search.toLowerCase()) ||
