@@ -322,14 +322,19 @@ const addSong = () => {
     topSongs.length > 0 ? topSongs[0] : null;
 
   const handleProgress = () => {
-    if (!audioRef.current) return;
+  if (!audioRef.current) return;
 
-    setProgress(
-      (audioRef.current.currentTime /
-        audioRef.current.duration) *
-        100
-    );
-  };
+  const currentTime = audioRef.current.currentTime;
+  const duration = audioRef.current.duration;
+
+  if (!duration || isNaN(duration)) {
+    setProgress(0);
+    return;
+  }
+
+  setProgress((currentTime / duration) * 100);
+};
+
     if (!currentSong)
     return <h1 style={{ color: "white", padding: 40 }}>Loading...</h1>;
 
