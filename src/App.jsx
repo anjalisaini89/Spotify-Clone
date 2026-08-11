@@ -927,7 +927,13 @@ function App() {
                   COMPLETELY INDEPENDENT
               ========================= */}
 
-              <AIDJ />
+              <AIDJ
+  recommendedSongs={topSongs}
+  favorites={favorites}
+  recentSongs={recentSongs}
+  playCount={playCount}
+  selectSong={selectSong}
+/>
             </>
           )}
 
