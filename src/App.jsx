@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 
 import Sidebar from "./components/Sidebar";
@@ -13,140 +13,222 @@ import AIDJ from "./components/AIDJ";
 import MiniPlayer from "./components/MiniPlayer";
 import Login from "./components/Login";
 
-function App() {
-  const audioRef = useRef(null);
+import { useAudioPlayer } from "./Hooks/useAudioPlayer";
+import { getSongs } from "./Services/api";
 
-  /* =========================
-     SONG STATE
-  ========================= */
+function App() {
+  /* =====================================================
+     SONGS
+  ===================================================== */
 
   const [songs, setSongs] = useState([]);
-  const [currentSong, setCurrentSong] = useState(null);
-  const [playing, setPlaying] = useState(false);
+  const [songsLoading, setSongsLoading] = useState(true);
+  const [songsError, setSongsError] = useState("");
 
-  /* =========================
-     SEARCH / CATEGORY
-  ========================= */
+  /* =====================================================
+     SEARCH
+  ===================================================== */
 
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
-  /* =========================
+  /* =====================================================
      USER DATA
-  ========================= */
+     Temporary localStorage version.
+     Later → MongoDB
+  ===================================================== */
 
   const [favorites, setFavorites] = useState([]);
   const [recentSongs, setRecentSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [playlistName, setPlaylistName] = useState("");
 
-  /* =========================
-     PLAYER
-  ========================= */
-
-  const [queue, setQueue] = useState([]);
-  const [shuffle, setShuffle] = useState(false);
-  const [volume, setVolume] = useState(1);
-  const [progress, setProgress] = useState(0);
-
-  /* =========================
-     UI
-  ========================= */
-
-  const [theme, setTheme] = useState("dark");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activePage, setActivePage] = useState("home");
-
-  /* =========================
+  /* =====================================================
      STATISTICS
-  ========================= */
+     Temporary localStorage version.
+     Later → Node + MongoDB
+  ===================================================== */
 
   const [playCount, setPlayCount] = useState({});
-  const [totalListeningTime, setTotalListeningTime] = useState(0);
+  const [totalListeningTime, setTotalListeningTime] =
+    useState(0);
 
-  /* =========================
-     UPLOAD SONG
-  ========================= */
+  /* =====================================================
+     UPLOAD
+     Temporary frontend version.
+     Later → Node upload API
+  ===================================================== */
 
   const [newSongTitle, setNewSongTitle] = useState("");
   const [newSongArtist, setNewSongArtist] = useState("");
   const [newSongCover, setNewSongCover] = useState("");
   const [newSongAudio, setNewSongAudio] = useState("");
 
-  /* =========================
-     THEME
-  ========================= */
+  /* =====================================================
+     UI
+  ===================================================== */
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+  const [theme, setTheme] = useState("dark");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePage, setActivePage] = useState("home");
 
-  /* =========================
-     LOAD SONGS + USER DATA
-  ========================= */
+  /* =====================================================
+     AUDIO PLAYER
+  ===================================================== */
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const response = await fetch("/songs.json");
+  const handleSongPlayed = useCallback((song) => {
+    if (!song) return;
 
-        if (!response.ok) {
-          throw new Error("songs.json could not be loaded");
-        }
+    /* Recently played */
 
-        const data = await response.json();
+    setRecentSongs((previous) => [
+      song,
+      ...previous.filter(
+        (item) => item.id !== song.id
+      ),
+    ].slice(0, 10));
 
-        const customSongs =
-          JSON.parse(localStorage.getItem("customSongs")) || [];
+    /* Play count */
 
-        const allSongs = [...data, ...customSongs];
-
-        setSongs(allSongs);
-
-        if (allSongs.length > 0) {
-          setCurrentSong(allSongs[0]);
-        }
-      } catch (error) {
-        console.error("Error loading songs:", error);
-      }
-
-      /* Favorites */
-
-      setFavorites(
-        JSON.parse(localStorage.getItem("favorites")) || []
-      );
-
-      /* Recently Played */
-
-      setRecentSongs(
-        JSON.parse(localStorage.getItem("recentSongs")) || []
-      );
-
-      /* Playlists */
-
-      setPlaylists(
-        JSON.parse(localStorage.getItem("playlists")) || []
-      );
-
-      /* Play Count */
-
-      setPlayCount(
-        JSON.parse(localStorage.getItem("playCount")) || {}
-      );
-
-      /* Listening Time */
-
-      setTotalListeningTime(
-        Number(localStorage.getItem("listeningTime")) || 0
-      );
-    };
-
-    loadData();
+    setPlayCount((previous) => ({
+      ...previous,
+      [song.id]: (previous[song.id] || 0) + 1,
+    }));
   }, []);
 
-  /* =========================
-     SAVE FAVORITES
-  ========================= */
+  const {
+    audioRef,
+
+    currentSong,
+    playing,
+
+    progress,
+
+    volume,
+    setVolume,
+
+    shuffle,
+    setShuffle,
+
+    queue,
+
+    playSong,
+    pauseSong,
+    selectSong,
+    nextSong,
+    prevSong,
+
+    addToQueue,
+
+    handleProgress,
+    handleSeek,
+  } = useAudioPlayer({
+    songs,
+    onSongPlayed: handleSongPlayed,
+  });
+
+  /* =====================================================
+     THEME
+  ===================================================== */
+
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      theme
+    );
+  }, [theme]);
+
+  /* =====================================================
+     LOAD SONGS FROM NODE API
+  ===================================================== */
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSongs = async () => {
+      try {
+        setSongsLoading(true);
+        setSongsError("");
+
+        const data = await getSongs();
+
+        if (!mounted) return;
+
+        setSongs(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error(
+          "Failed to load songs:",
+          error
+        );
+
+        if (mounted) {
+          setSongsError(
+            "Unable to connect to Vibely server."
+          );
+        }
+      } finally {
+        if (mounted) {
+          setSongsLoading(false);
+        }
+      }
+    };
+
+    loadSongs();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /* =====================================================
+     LOAD TEMPORARY LOCAL DATA
+  ===================================================== */
+
+  useEffect(() => {
+    try {
+      setFavorites(
+        JSON.parse(
+          localStorage.getItem("favorites")
+        ) || []
+      );
+
+      setRecentSongs(
+        JSON.parse(
+          localStorage.getItem("recentSongs")
+        ) || []
+      );
+
+      setPlaylists(
+        JSON.parse(
+          localStorage.getItem("playlists")
+        ) || []
+      );
+
+      setPlayCount(
+        JSON.parse(
+          localStorage.getItem("playCount")
+        ) || {}
+      );
+
+      setTotalListeningTime(
+        Number(
+          localStorage.getItem(
+            "listeningTime"
+          )
+        ) || 0
+      );
+    } catch (error) {
+      console.error(
+        "Failed to load local data:",
+        error
+      );
+    }
+  }, []);
+
+  /* =====================================================
+     SAVE TEMPORARY USER DATA
+  ===================================================== */
 
   useEffect(() => {
     localStorage.setItem(
@@ -155,20 +237,12 @@ function App() {
     );
   }, [favorites]);
 
-  /* =========================
-     SAVE RECENT SONGS
-  ========================= */
-
   useEffect(() => {
     localStorage.setItem(
       "recentSongs",
       JSON.stringify(recentSongs)
     );
   }, [recentSongs]);
-
-  /* =========================
-     SAVE PLAYLISTS
-  ========================= */
 
   useEffect(() => {
     localStorage.setItem(
@@ -177,10 +251,6 @@ function App() {
     );
   }, [playlists]);
 
-  /* =========================
-     SAVE PLAY COUNT
-  ========================= */
-
   useEffect(() => {
     localStorage.setItem(
       "playCount",
@@ -188,276 +258,68 @@ function App() {
     );
   }, [playCount]);
 
-  /* =========================
+  /* =====================================================
      LISTENING TIME
-  ========================= */
+  ===================================================== */
 
   useEffect(() => {
-    let timer;
+    if (!playing) return;
 
-    if (playing) {
-      timer = setInterval(() => {
-        setTotalListeningTime((previous) => {
-          const updated = previous + 1;
+    const timer = setInterval(() => {
+      setTotalListeningTime((previous) => {
+        const updated = previous + 1;
 
-          localStorage.setItem(
-            "listeningTime",
-            updated
-          );
+        localStorage.setItem(
+          "listeningTime",
+          updated
+        );
 
-          return updated;
-        });
-      }, 1000);
-    }
+        return updated;
+      });
+    }, 1000);
 
-    return () => {
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, [playing]);
 
-  /* =========================
-     VOLUME
-  ========================= */
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
-
-  /* =========================
-     PLAY SONG
-  ========================= */
-
-  const playSong = async () => {
-    if (!audioRef.current || !currentSong) {
-      return;
-    }
-
-    try {
-      await audioRef.current.play();
-
-      setPlaying(true);
-
-      setPlayCount((previous) => ({
-        ...previous,
-        [currentSong.id]:
-          (previous[currentSong.id] || 0) + 1,
-      }));
-    } catch (error) {
-      console.error(
-        "Unable to play song:",
-        error
-      );
-
-      setPlaying(false);
-    }
-  };
-
-  /* =========================
-     PAUSE SONG
-  ========================= */
-
-  const pauseSong = () => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    audioRef.current.pause();
-    setPlaying(false);
-  };
-
-  /* =========================
-     SELECT SONG
-  ========================= */
-
-  const selectSong = async (song) => {
-    if (!song) {
-      return;
-    }
-
-    setCurrentSong(song);
-
-    setProgress(0);
-
-    /* Recently Played */
-
-    setRecentSongs((previous) =>
-      [
-        song,
-        ...previous.filter(
-          (item) => item.id !== song.id
-        ),
-      ].slice(0, 10)
-    );
-
-    /*
-      Wait for React to update the audio source
-      before playing the new song.
-    */
-
-    setTimeout(async () => {
-      if (!audioRef.current) {
-        return;
-      }
-
-      try {
-        audioRef.current.currentTime = 0;
-
-        await audioRef.current.play();
-
-        setPlaying(true);
-      } catch (error) {
-        console.error(
-          "Unable to play selected song:",
-          error
-        );
-
-        setPlaying(false);
-      }
-    }, 150);
-  };
-
-  /* =========================
-     NEXT SONG
-  ========================= */
-
-  const nextSong = () => {
-    if (!songs.length || !currentSong) {
-      return;
-    }
-
-    /* Queue */
-
-    if (queue.length > 0) {
-      const next = queue[0];
-
-      setQueue((previous) =>
-        previous.slice(1)
-      );
-
-      selectSong(next);
-
-      return;
-    }
-
-    /* Shuffle */
-
-    if (shuffle) {
-      let randomSong;
-
-      if (songs.length === 1) {
-        randomSong = songs[0];
-      } else {
-        do {
-          randomSong =
-            songs[
-              Math.floor(
-                Math.random() * songs.length
-              )
-            ];
-        } while (
-          randomSong.id === currentSong.id
-        );
-      }
-
-      selectSong(randomSong);
-
-      return;
-    }
-
-    /* Normal Next */
-
-    const index = songs.findIndex(
-      (song) =>
-        song.id === currentSong.id
-    );
-
-    const nextIndex =
-      index === -1
-        ? 0
-        : (index + 1) % songs.length;
-
-    selectSong(songs[nextIndex]);
-  };
-
-  /* =========================
-     PREVIOUS SONG
-  ========================= */
-
-  const prevSong = () => {
-    if (!songs.length || !currentSong) {
-      return;
-    }
-
-    const index = songs.findIndex(
-      (song) =>
-        song.id === currentSong.id
-    );
-
-    const previousIndex =
-      index === -1
-        ? 0
-        : (index - 1 + songs.length) %
-          songs.length;
-
-    selectSong(songs[previousIndex]);
-  };
-
-  /* =========================
+  /* =====================================================
      FAVORITES
-  ========================= */
+  ===================================================== */
 
-  const toggleFavorite = (song) => {
-    if (!song) {
-      return;
-    }
+  const toggleFavorite = useCallback((song) => {
+    if (!song) return;
 
-    setFavorites((previous) =>
-      previous.some(
+    setFavorites((previous) => {
+      const exists = previous.some(
         (favorite) =>
           favorite.id === song.id
-      )
-        ? previous.filter(
-            (favorite) =>
-              favorite.id !== song.id
-          )
-        : [...previous, song]
-    );
-  };
+      );
 
-  /* =========================
-     QUEUE
-  ========================= */
+      if (exists) {
+        return previous.filter(
+          (favorite) =>
+            favorite.id !== song.id
+        );
+      }
 
-  const addToQueue = (song) => {
-    if (!song) {
-      return;
-    }
+      return [...previous, song];
+    });
+  }, []);
 
-    setQueue((previous) =>
-      previous.some(
-        (item) =>
-          item.id === song.id
-      )
-        ? previous
-        : [...previous, song]
-    );
-  };
+  /* =====================================================
+     PLAYLISTS
+  ===================================================== */
 
-  /* =========================
-     CREATE PLAYLIST
-  ========================= */
+  const createPlaylist = useCallback(() => {
+    const name = playlistName.trim();
 
-  const createPlaylist = () => {
-    if (!playlistName.trim()) {
+    if (!name) {
       alert("Please enter a playlist name");
       return;
     }
 
     const newPlaylist = {
       id: Date.now(),
-      name: playlistName.trim(),
+      name,
       songs: [],
     };
 
@@ -467,26 +329,22 @@ function App() {
     ]);
 
     setPlaylistName("");
-  };
+  }, [playlistName]);
 
-  /* =========================
-     DELETE PLAYLIST
-  ========================= */
-
-  const deletePlaylist = (id) => {
+  const deletePlaylist = useCallback((id) => {
     setPlaylists((previous) =>
       previous.filter(
         (playlist) =>
           playlist.id !== id
       )
     );
-  };
+  }, []);
 
-  /* =========================
-     ADD / UPLOAD SONG
-  ========================= */
+  /* =====================================================
+     ADD SONG
+  ===================================================== */
 
-  const addSong = () => {
+  const addSong = useCallback(() => {
     if (
       !newSongTitle.trim() ||
       !newSongArtist.trim()
@@ -519,23 +377,6 @@ function App() {
       category: "Custom",
     };
 
-    const existingCustomSongs =
-      JSON.parse(
-        localStorage.getItem("customSongs")
-      ) || [];
-
-    const updatedCustomSongs = [
-      ...existingCustomSongs,
-      newSong,
-    ];
-
-    localStorage.setItem(
-      "customSongs",
-      JSON.stringify(
-        updatedCustomSongs
-      )
-    );
-
     setSongs((previous) => [
       ...previous,
       newSong,
@@ -547,225 +388,177 @@ function App() {
     setNewSongAudio("");
 
     alert("Song added successfully 🎵");
-  };
+  }, [
+    newSongTitle,
+    newSongArtist,
+    newSongCover,
+    newSongAudio,
+  ]);
 
-  /* =========================
-     SEARCH FILTER
-  ========================= */
+  /* =====================================================
+     FILTERED SONGS
+  ===================================================== */
 
-  const filteredSongs = songs.filter(
-    (song) => {
+  const filteredSongs = useMemo(() => {
+    const searchText =
+      search.trim().toLowerCase();
+
+    return songs.filter((song) => {
       const title =
         song.title?.toLowerCase() || "";
 
       const artist =
         song.artist?.toLowerCase() || "";
 
-      const searchText =
-        search.toLowerCase();
-
       const matchesSearch =
+        !searchText ||
         title.includes(searchText) ||
         artist.includes(searchText);
 
       const matchesCategory =
         selectedCategory === "All" ||
-        song.category ===
-          selectedCategory;
+        song.category === selectedCategory;
 
       return (
         matchesSearch &&
         matchesCategory
       );
-    }
-  );
+    });
+  }, [
+    songs,
+    search,
+    selectedCategory,
+  ]);
 
-  /* =========================
+  /* =====================================================
      TRENDING SONGS
-  ========================= */
+  ===================================================== */
 
-  const topSongs = [...songs]
-    .sort(
-      (a, b) =>
-        (playCount[b.id] || 0) -
-        (playCount[a.id] || 0)
-    )
-    .slice(0, 5);
+  const topSongs = useMemo(() => {
+    return [...songs]
+      .sort(
+        (a, b) =>
+          (playCount[b.id] || 0) -
+          (playCount[a.id] || 0)
+      )
+      .slice(0, 5);
+  }, [songs, playCount]);
 
-  /* =========================
-     MOST PLAYED SONG
-  ========================= */
+  /* =====================================================
+     MOST PLAYED
+  ===================================================== */
 
   const mostPlayedSong =
-    topSongs.length > 0
-      ? topSongs[0]
-      : null;
+    topSongs[0] || null;
 
-  /* =========================
-     AUDIO PROGRESS
-  ========================= */
-
-  const handleProgress = () => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    const currentTime =
-      audioRef.current.currentTime;
-
-    const duration =
-      audioRef.current.duration;
-
-    if (
-      !duration ||
-      Number.isNaN(duration)
-    ) {
-      setProgress(0);
-      return;
-    }
-
-    setProgress(
-      (currentTime / duration) * 100
-    );
-  };
-
-  /* =========================
-     SEEK SONG
-  ========================= */
-
-  const handleSeek = (value) => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    const duration =
-      audioRef.current.duration;
-
-    if (
-      !duration ||
-      Number.isNaN(duration)
-    ) {
-      return;
-    }
-
-    const newTime =
-      (Number(value) / 100) * duration;
-
-    audioRef.current.currentTime =
-      newTime;
-
-    setProgress(Number(value));
-  };
-
-  /* =========================
+  /* =====================================================
      LOADING
-  ========================= */
+  ===================================================== */
 
-  if (!currentSong) {
+  if (songsLoading) {
     return (
-      <h1
-        style={{
-          color: "white",
-          padding: "40px",
-        }}
-      >
-        Loading Vibely...
-      </h1>
+      <div className="loading-screen">
+        <h1>Loading Vibely...</h1>
+        <p>Connecting to music server...</p>
+      </div>
     );
   }
 
-  /* =========================
+  /* =====================================================
+     SERVER ERROR
+  ===================================================== */
+
+  if (songsError) {
+    return (
+      <div className="loading-screen">
+        <h1>Vibely</h1>
+
+        <p>{songsError}</p>
+
+        <p>
+          Make sure the Node.js server is
+          running on port 5000.
+        </p>
+      </div>
+    );
+  }
+
+  /* =====================================================
      UI
-  ========================= */
+  ===================================================== */
 
   return (
     <>
-      {/* =========================
+      {/* =================================================
           BACKGROUND
-      ========================= */}
+      ================================================= */}
 
-      <div className="moon"></div>
+      <div className="moon" />
 
       <div className="stars">
-        {[...Array(40)].map(
-          (_, index) => (
-            <span
-              key={index}
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-            />
-          )
-        )}
+        {[...Array(40)].map((_, index) => (
+          <span
+            key={index}
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
       </div>
 
       <div className="fireflies">
-        {[...Array(15)].map(
-          (_, index) => (
-            <span key={index} />
-          )
-        )}
+        {[...Array(15)].map((_, index) => (
+          <span key={index} />
+        ))}
       </div>
 
       <div className="petals">
-        {[...Array(20)].map(
-          (_, index) => (
-            <span key={index} />
-          )
-        )}
+        {[...Array(20)].map((_, index) => (
+          <span key={index} />
+        ))}
       </div>
 
-      {/* =========================
-          AUDIO PLAYER
-      ========================= */}
+      {/* =================================================
+          AUDIO
+      ================================================= */}
 
-      <audio
-        ref={audioRef}
-        src={currentSong.audio}
-        onEnded={nextSong}
-        onTimeUpdate={handleProgress}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-      />
+      {currentSong && (
+        <audio
+          ref={audioRef}
+          src={currentSong.audio}
+          onEnded={nextSong}
+          onTimeUpdate={handleProgress}
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+        />
+      )}
 
-      {/* =========================
-          MAIN APP
-      ========================= */}
+      {/* =================================================
+          APP
+      ================================================= */}
 
       <div className="app">
 
-        {/* SIDEBAR */}
-
         <Sidebar
           sidebarOpen={sidebarOpen}
-          setSidebarOpen={
-            setSidebarOpen
-          }
+          setSidebarOpen={setSidebarOpen}
           activePage={activePage}
-          setActivePage={
-            setActivePage
-          }
+          setActivePage={setActivePage}
           theme={theme}
           setTheme={setTheme}
         />
 
-        {/* MAIN CONTENT */}
-
         <div className="main">
-
-          {/* LOGIN */}
 
           <Login />
 
-          {/* =========================
+          {/* =================================================
               HOME
-          ========================= */}
+          ================================================= */}
 
           {activePage === "home" && (
             <>
-              {/* DASHBOARD */}
-
               <Dashboard
                 totalListeningTime={
                   totalListeningTime
@@ -778,24 +571,18 @@ function App() {
                 }
               />
 
-              {/* HERO */}
-
-              <Hero
-                currentSong={
-                  currentSong
-                }
-                playing={playing}
-                playSong={playSong}
-              />
-
-              {/* SEARCH */}
+              {currentSong && (
+                <Hero
+                  currentSong={currentSong}
+                  playing={playing}
+                  playSong={playSong}
+                />
+              )}
 
               <Search
                 search={search}
                 setSearch={setSearch}
               />
-
-              {/* CATEGORY */}
 
               <CategoryBar
                 selectedCategory={
@@ -806,80 +593,48 @@ function App() {
                 }
               />
 
-              {/* FEATURED */}
-
               <SongList
                 title="⭐ Featured Albums"
                 songs={songs.slice(0, 6)}
-                selectSong={
-                  selectSong
-                }
+                selectSong={selectSong}
               />
-
-              {/* TRENDING */}
 
               <SongList
                 title="🔥 Trending Now"
                 songs={topSongs}
-                selectSong={
-                  selectSong
-                }
+                selectSong={selectSong}
               />
-
-              {/* RECENTLY PLAYED */}
 
               <SongList
                 title="🕒 Recently Played"
                 songs={recentSongs}
-                selectSong={
-                  selectSong
-                }
+                selectSong={selectSong}
               />
-
-              {/* FAVORITES */}
 
               <SongList
                 title="❤️ Favorites"
                 songs={favorites}
-                selectSong={
-                  selectSong
-                }
-                favorites={
-                  favorites
-                }
+                selectSong={selectSong}
+                favorites={favorites}
                 toggleFavorite={
                   toggleFavorite
                 }
               />
-
-              {/* ALL SONGS */}
 
               <SongList
                 title="🎵 All Songs"
                 songs={filteredSongs}
-                selectSong={
-                  selectSong
-                }
-                favorites={
-                  favorites
-                }
+                selectSong={selectSong}
+                favorites={favorites}
                 toggleFavorite={
                   toggleFavorite
                 }
-                addToQueue={
-                  addToQueue
-                }
+                addToQueue={addToQueue}
               />
 
-              {/* PLAYLISTS */}
-
               <Playlist
-                playlists={
-                  playlists
-                }
-                playlistName={
-                  playlistName
-                }
+                playlists={playlists}
+                playlistName={playlistName}
                 setPlaylistName={
                   setPlaylistName
                 }
@@ -891,12 +646,8 @@ function App() {
                 }
               />
 
-              {/* UPLOAD */}
-
               <UploadSong
-                newSongTitle={
-                  newSongTitle
-                }
+                newSongTitle={newSongTitle}
                 setNewSongTitle={
                   setNewSongTitle
                 }
@@ -906,40 +657,30 @@ function App() {
                 setNewSongArtist={
                   setNewSongArtist
                 }
-                newSongCover={
-                  newSongCover
-                }
+                newSongCover={newSongCover}
                 setNewSongCover={
                   setNewSongCover
                 }
-                newSongAudio={
-                  newSongAudio
-                }
+                newSongAudio={newSongAudio}
                 setNewSongAudio={
                   setNewSongAudio
                 }
                 addSong={addSong}
               />
 
-              {/* =========================
-                  AI DJ
-                  
-                  COMPLETELY INDEPENDENT
-              ========================= */}
-
               <AIDJ
-  recommendedSongs={topSongs}
-  favorites={favorites}
-  recentSongs={recentSongs}
-  playCount={playCount}
-  selectSong={selectSong}
-/>
+                recommendedSongs={topSongs}
+                favorites={favorites}
+                recentSongs={recentSongs}
+                playCount={playCount}
+                selectSong={selectSong}
+              />
             </>
           )}
 
-          {/* =========================
-              SEARCH PAGE
-          ========================= */}
+          {/* =================================================
+              SEARCH
+          ================================================= */}
 
           {activePage === "search" && (
             <>
@@ -960,80 +701,58 @@ function App() {
               <SongList
                 title="🔍 Search Results"
                 songs={filteredSongs}
-                selectSong={
-                  selectSong
-                }
-                favorites={
-                  favorites
-                }
+                selectSong={selectSong}
+                favorites={favorites}
                 toggleFavorite={
                   toggleFavorite
                 }
-                addToQueue={
-                  addToQueue
-                }
+                addToQueue={addToQueue}
               />
             </>
           )}
 
-          {/* =========================
-              FAVORITES PAGE
-          ========================= */}
+          {/* =================================================
+              FAVORITES
+          ================================================= */}
 
           {activePage === "favorites" && (
             <SongList
               title="❤️ Favorite Songs"
               songs={favorites}
-              selectSong={
-                selectSong
-              }
-              favorites={
-                favorites
-              }
+              selectSong={selectSong}
+              favorites={favorites}
               toggleFavorite={
                 toggleFavorite
               }
-              addToQueue={
-                addToQueue
-              }
+              addToQueue={addToQueue}
             />
           )}
 
-          {/* =========================
-              LIBRARY PAGE
-          ========================= */}
+          {/* =================================================
+              LIBRARY
+          ================================================= */}
 
           {activePage === "library" && (
             <SongList
               title="🎵 Library"
               songs={songs}
-              selectSong={
-                selectSong
-              }
-              favorites={
-                favorites
-              }
+              selectSong={selectSong}
+              favorites={favorites}
               toggleFavorite={
                 toggleFavorite
               }
-              addToQueue={
-                addToQueue
-              }
+              addToQueue={addToQueue}
             />
           )}
 
-          {/* =========================
-              PLAYLISTS PAGE
-          ========================= */}
+          {/* =================================================
+              PLAYLISTS
+          ================================================= */}
 
           {activePage === "playlists" && (
             <Playlist
-              playlists={
-                playlists
-              }
-              playlistName={
-                playlistName
-              }
+              playlists={playlists}
+              playlistName={playlistName}
               setPlaylistName={
                 setPlaylistName
               }
@@ -1045,38 +764,36 @@ function App() {
               }
             />
           )}
+
         </div>
       </div>
 
-      {/* =========================
+      {/* =================================================
           MINI PLAYER
-      ========================= */}
+      ================================================= */}
 
-      <MiniPlayer
-        currentSong={
-          currentSong
-        }
-        playing={playing}
-        playSong={playSong}
-        pauseSong={pauseSong}
-        prevSong={prevSong}
-        nextSong={nextSong}
-        progress={progress}
-        setProgress={
-          handleSeek
-        }
-        audioRef={
-          audioRef
-        }
-        volume={volume}
-        setVolume={setVolume}
-        favorites={
-          favorites
-        }
-        toggleFavorite={
-          toggleFavorite
-        }
-      />
+      {currentSong && (
+        <MiniPlayer
+          currentSong={currentSong}
+          playing={playing}
+          playSong={playSong}
+          pauseSong={pauseSong}
+          prevSong={prevSong}
+          nextSong={nextSong}
+          progress={progress}
+          setProgress={handleSeek}
+          audioRef={audioRef}
+          volume={volume}
+          setVolume={setVolume}
+          favorites={favorites}
+          toggleFavorite={
+            toggleFavorite
+          }
+          shuffle={shuffle}
+          setShuffle={setShuffle}
+          queue={queue}
+        />
+      )}
     </>
   );
 }
