@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
+import songRoutes from "./routes/songRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -21,7 +23,7 @@ app.use(
 app.use(express.json());
 
 /* ================================
-   HEALTH CHECK
+   ROOT
 ================================ */
 
 app.get("/", (req, res) => {
@@ -32,7 +34,7 @@ app.get("/", (req, res) => {
 });
 
 /* ================================
-   TEST API
+   API
 ================================ */
 
 app.get("/api", (req, res) => {
@@ -41,6 +43,41 @@ app.get("/api", (req, res) => {
     message: "Welcome to Vibely API",
   });
 });
+
+/* ================================
+   SONG ROUTES
+================================ */
+
+app.use(
+  "/api/songs",
+  songRoutes
+);
+
+/* ================================
+   404
+================================ */
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
+
+/* ================================
+   ERROR HANDLER
+================================ */
+
+app.use(
+  (error, req, res, next) => {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+);
 
 /* ================================
    START SERVER
